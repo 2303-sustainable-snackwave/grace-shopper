@@ -2,7 +2,7 @@ const client = require("./client");
 
 async function createBillingAddress(userId, street, city, state, postalCode, country) {
     try {
-      const result = await db.query(
+      const result = await client.query(
         `
         INSERT INTO billing_addresses (user_id, street, city, state, postal_code, country)
         VALUES ($1, $2, $3, $4, $5, $6)
@@ -19,7 +19,7 @@ async function createBillingAddress(userId, street, city, state, postalCode, cou
 
 async function getBillingAddressByUserId(userId) {
     try {
-      const { rows } = await db.query(
+      const { rows } = await client.query(
         `SELECT * 
         FROM billing_addresses 
         WHERE user_id = $1

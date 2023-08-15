@@ -1,6 +1,6 @@
 const client = require("./client");
 
-
+// Updated
 
 async function createProducts({
     category,

@@ -4,17 +4,17 @@ const client = require("./client");
 // database functions
 
 // user functions
-async function createUser({ username, email, password, role }) {
+async function createUser({ name, email, password, role }) {
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const { rows: [user] } = await client.query(
       `
-      INSERT INTO users (username, email, password, role)
+      INSERT INTO users (name, email, password, role)
       VALUES ($1, $2, $3, $4)
       RETURNING *;
       `,
-      [username, email, hashedPassword, role]
+      [name, email, hashedPassword, role]
     );
 
     delete user.password;
@@ -25,10 +25,10 @@ async function createUser({ username, email, password, role }) {
   }
 }
 
-async function getUser({ username, password }) {
+async function getUser({ name, password }) {
   try {
    
-    const user = await getUserByUsername(username);
+    const user = await getUserByUsername(name);
 
     if (!user) {
       return null;
@@ -56,7 +56,7 @@ async function getUserById(userId) {
       rows: [user],
     } = await client.query(
       `
-      SELECT id, username
+      SELECT id, name
       FROM users
       WHERE id = $1
       `,
@@ -73,7 +73,7 @@ async function getUserById(userId) {
   }
 }
 
-async function getUserByUsername(username) {
+async function getUserByName(name) {
   try {
     const {
       rows: [user],
@@ -81,9 +81,9 @@ async function getUserByUsername(username) {
       `
       SELECT *
       FROM users
-      WHERE username=$1;
+      WHERE name=$1;
       `,
-      [username]
+      [name]
     );
 
     if (!user) {
@@ -102,7 +102,7 @@ async function getUserByEmail(email) {
       rows: [user],
     } = await client.query(
       `
-      SELECT id, username
+      SELECT id, name
       FROM users
       WHERE email = $1
       `,
@@ -119,10 +119,59 @@ async function getUserByEmail(email) {
   }
 }
 
+async function updateUser(userId, { name, email, password, role }) {
+  try {
+    const { rows: [user] } = await client.query(
+      `
+      UPDATE users
+      SET name = $1, email = $2, password = $3, role = $4
+      WHERE id = $5
+      RETURNING *;
+      `,
+      [name, email, password, role, userId]
+    );
+
+    if (!user) {
+      throw new Error(`User with ID ${userId} not found.`);
+    }
+
+    delete user.password;
+
+    return user;
+  } catch (error) {
+    throw new Error(`Could not update user: ${error.message}`);
+  }
+}
+
+async function deleteUser(userId) {
+  try {
+    const { rows: [user] } = await client.query(
+      `
+      DELETE FROM users
+      WHERE id = $1
+      RETURNING *;
+      `,
+      [userId]
+    );
+
+    if (!user) {
+      throw new Error(`User with ID ${userId} not found.`);
+    }
+
+    delete user.password;
+
+    return user;
+  } catch (error) {
+    throw new Error(`Could not delete user: ${error.message}`);
+  }
+}
+
 module.exports = {
   createUser,
   getUser,
   getUserById,
-  getUserByUsername,
-  getUserByEmail
+  getUserByName,
+  getUserByEmail,
+  updateUser,
+  deleteUser
 }

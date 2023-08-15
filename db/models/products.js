@@ -1,23 +1,49 @@
 const client = require("./client");
 
+
+
 async function createProducts({
-  name,
-  description,
-  photos,
-  reviews,
-  price,
-  shipping,
-  availability,
+    category,
+    brand,
+    name,
+    imageUrl,
+    description,
+    min_price,
+    max_price,
+    currency_code,
+    amount,
+    availability,
+    total_inventory,
 }) {
   try {
     const {
       rows: [products],
     } = await client.query(
-      ` INSERT INTO products(name, description, photos, reviews, price, shipping, availability)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)\
+      ` INSERT INTO products(category,
+        brand,
+        name,
+        imageUrl,
+        description,
+        min_price,
+        max_price,
+        currency_code,
+        amount,
+        availability,
+        total_inventory, )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
             RETURNING *;
             `,
-      [name, description, photos, reviews, price, shipping, availability]
+      [category,
+        brand,
+        name,
+        imageUrl,
+        description,
+        min_price,
+        max_price,
+        currency_code,
+        amount,
+        availability,
+        total_inventory]
     );
     return products;
   } catch (error) {

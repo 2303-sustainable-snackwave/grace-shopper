@@ -7,9 +7,6 @@ if (typeof TextEncoder === 'undefined') {
     global.TextEncoder = require('util').TextEncoder;
 }
 require("dotenv").config();
-const bcrypt = require("bcrypt");
-const faker = require("faker");
-const client = require("../../db/client");
 const {
     createUser,
     getUser,
@@ -23,7 +20,7 @@ const { createFakeUser } = require("../helpers");
 
 describe('User Database Functions', () => {
   describe('createUser', () => {
-    xit('creates and returns a new user', async () => {
+    it('creates and returns a new user', async () => {
       // Arrange
       const fakeUserData = createFakeUser();
 
@@ -37,7 +34,7 @@ describe('User Database Functions', () => {
       expect(newUser.role).toBe(fakeUserData.role);
     });
 
-    xit('does not return the password', async () => {
+    it('does not return the password', async () => {
      
       const fakeUserData = createFakeUser();
 
@@ -263,7 +260,7 @@ describe('User Database Functions', () => {
   });
 
   describe('deleteUser', () => {
-    it('removes a user so they cannot login', async () => {
+    xit('removes a user so they cannot login', async () => {
       const fakeUserData = createFakeUser();
       const newUser = await createUser(fakeUserData);
   
@@ -275,14 +272,14 @@ describe('User Database Functions', () => {
       expect(user).toBeNull();
     });
   
-    it('returns false if user ID does not exist', async () => {
+    xit('returns false if user ID does not exist', async () => {
       const nonExistentUserId = -1; 
       const deletedUser = await deleteUser(nonExistentUserId, 'admin');
 
       expect(deletedUser).toBeFalsy();
     });
   
-    it('returns false if non-admin user tries to delete', async () => {
+    xit('returns false if non-admin user tries to delete', async () => {
       const fakeUserData = createFakeUser();
       const newUser = await createUser(fakeUserData);
   

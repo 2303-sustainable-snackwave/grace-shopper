@@ -1,8 +1,8 @@
-const faker = require("faker");
+const { faker } = require('@faker-js/faker');
 const {
   createUser,
 
-} = require("../../db/models");
+} = require("../db/models");
 const jwt = require("jsonwebtoken");
 const { JWT_SECRET = "neverTell" } = process.env;
 // This contains helper functions which create fake entries in the database
@@ -10,7 +10,7 @@ const { JWT_SECRET = "neverTell" } = process.env;
 
 const createFakeUser = async (overrides = {}) => {
     const fakeUserData = {
-      name: faker.name.findName(),
+      name: faker.person.fullName(),
       email: faker.internet.email(),
       password: faker.internet.password(),
       role: "user",
@@ -38,9 +38,7 @@ const createFakeUserWithToken = async (email) => {
 };
 
 
-
-
 module.exports = {
     createFakeUser,
     createFakeUserWithToken
-  };
+};

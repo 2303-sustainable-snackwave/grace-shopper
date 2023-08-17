@@ -119,8 +119,14 @@ async function getUserByEmail(email) {
   }
 }
 
-async function updateUser(userId, { name, email, password, role }) {
+async function updateUser(userId, { name, email, password, role }, requestingUserRole) {
   try {
+    if (requestingUserRole !== 'admin') {
+      throw new Error('Only admin users can update roles.');
+    }
+
+    const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
+
     const { rows: [user] } = await client.query(
       `
       UPDATE users
@@ -128,7 +134,7 @@ async function updateUser(userId, { name, email, password, role }) {
       WHERE id = $5
       RETURNING *;
       `,
-      [name, email, password, role, userId]
+      [name, email, hashedPassword, role, userId]
     );
 
     if (!user) {
@@ -143,26 +149,25 @@ async function updateUser(userId, { name, email, password, role }) {
   }
 }
 
-async function deleteUser(userId) {
+async function deleteUser(userId, requestingUserRole) {
   try {
-    const { rows: [user] } = await client.query(
+
+    if (requestingUserRole !== 'admin') {
+      throw new Error('Only admin users can delete users.');
+    }
+
+    await client.query(
       `
-      DELETE FROM users
+      UPDATE users
+      SET role = 'deleted'
       WHERE id = $1
-      RETURNING *;
       `,
       [userId]
     );
 
-    if (!user) {
-      throw new Error(`User with ID ${userId} not found.`);
-    }
-
-    delete user.password;
-
-    return user;
+    return true;
   } catch (error) {
-    throw new Error(`Could not delete user: ${error.message}`);
+    throw new Error('Could not delete user: ' + error.message);
   }
 }
 

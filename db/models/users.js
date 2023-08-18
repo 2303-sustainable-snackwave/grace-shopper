@@ -186,7 +186,6 @@ async function updateUser(userId, updatedFields, requestingUserRole) {
 }
 
 async function deleteUser(userId, requestingUserRole) {
-async function deleteUser(userId, requestingUserRole) {
   try {
     if (requestingUserRole !== 'admin') {
       throw new Error('Only admin users can delete users.');
@@ -209,7 +208,6 @@ async function deleteUser(userId, requestingUserRole) {
 
     return true;
   } catch (error) {
-    throw new Error('Could not delete user: ' + error.message);
     throw new Error('Could not delete user: ' + error.message);
   }
 }

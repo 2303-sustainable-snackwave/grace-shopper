@@ -38,4 +38,4 @@ const createFakeUserWithToken = async (email) => {
 module.exports = {
     createFakeUser,
     createFakeUserWithToken
-};
+}

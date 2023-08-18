@@ -25,7 +25,6 @@ router.post("/", async (req, res, next) => {
 });
 
 // POST /api/products
-
 router.post("/", async (req, res, next) => {
   const token = req.headers.authorization?.split(" ")[1];
 

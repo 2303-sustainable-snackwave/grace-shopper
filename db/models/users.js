@@ -1,5 +1,5 @@
 const bcrypt = require('bcrypt');
-const client = require("./client");
+const client = require("../client");
 
 // database functions
 
@@ -47,6 +47,18 @@ async function getUser({ name, password }) {
     return user;
   } catch (error) {
     throw new Error('Could not locate user ' + error.message);
+  }
+}
+
+async function getAllUsers() {
+  try {
+    const { rows } = await client.query(`
+      SELECT *
+      FROM users
+    `)
+    return rows;
+  } catch (error) {
+    throw error;
   }
 }
 
@@ -169,6 +181,7 @@ async function deleteUser(userId) {
 module.exports = {
   createUser,
   getUser,
+  getAllUsers,
   getUserById,
   getUserByName,
   getUserByEmail,

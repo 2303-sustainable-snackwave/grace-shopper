@@ -1,6 +1,8 @@
 const {faker} = require('@faker-js/faker');
-const {v4} = require('uuid')
+const {v4} = require('uuid');
 const {createProducts, getAllProducts} = require('./models/products')
+const {createUser, getAllUsers} = require('./models/users')
+
 const client = require('./client');
 
 const bikeData = () => {
@@ -18,7 +20,7 @@ const bikeData = () => {
     });
 
     return{
-       id: v4(), 
+        //id: v4(),
        category: category,
        brand: faker.vehicle.manufacturer(),
        name: name, 
@@ -49,6 +51,7 @@ async function dropTables() {
 
     // Add your SQL query to drop the products table here
     await client.query(`
+      DROP TABLE IF EXISTS users;
       DROP TABLE IF EXISTS products;
     `);
 
@@ -66,8 +69,15 @@ async function createTables() {
 
     // Add your SQL query to create the products table here
     await client.query(`
+      CREATE TABLE users (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        role VARCHAR(255) NOT NULL
+      );
       CREATE TABLE products (
-        id UUID PRIMARY KEY,
+        id SERIAL PRIMARY KEY,
         category TEXT,
         brand TEXT,
         name TEXT,
@@ -105,6 +115,22 @@ async function fillDB(numSamples) {
   }
 }
 
+
+async function createInitialUsers() {
+  try {
+      console.log("Starting to create users...");
+
+      await createUser({ name: 'albert', email: 'abc.com', password: 'bertie99', role: 'customer'});
+      await createUser({ name: 'sandra', email: 'def.com', password: '2sandy4me', role: 'administrator' });
+      await createUser({ name: 'glamgal', email: 'ghi.com', password: 'soglam', role: 'customer' });
+
+      console.log("Finished creating users!");
+  }   catch(error) {
+      console.error("Error creating users!");
+      throw error;
+  }
+}
+
 async function rebuildDB() {
   try {
       client.connect();
@@ -112,6 +138,7 @@ async function rebuildDB() {
       await dropTables();
       await createTables();
       await fillDB(10);
+      await createInitialUsers();
   }   catch(error) {
       console.log("Error during rebuildDB")
       throw error;
@@ -125,6 +152,10 @@ async function testDB() {
     console.log("Calling getAllProducts");
     const products = await getAllProducts();
     console.log("Result:", products);
+
+    console.log("Calling getAllUsers");
+    const users = await getAllUsers();
+    console.log("Result:", users);
 
     console.log("Finished database tests!");
   } catch (error) {

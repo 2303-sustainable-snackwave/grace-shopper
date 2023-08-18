@@ -28,7 +28,7 @@ async function createUser({ name, email, password, role }) {
 async function getUser({ name, password }) {
   try {
    
-    const user = await getUserByUsername(name);
+    const user = await getUserByName(name);
 
     if (!user) {
       return null;
@@ -68,7 +68,7 @@ async function getUserById(userId) {
       rows: [user],
     } = await client.query(
       `
-      SELECT id, name
+      SELECT id, name, password, email, role
       FROM users
       WHERE id = $1
       `,
@@ -78,7 +78,7 @@ async function getUserById(userId) {
     if (!user) {
       return null;
     }
-
+    delete user.password;
     return user;
   } catch (error) { 
     throw new Error('Could not locate user with id: ' + error.message);
@@ -104,7 +104,7 @@ async function getUserByName(name) {
 
     return user;
   } catch (error) {
-    throw new Error('Could not locate username: ' + error.message);
+    throw new Error('Could not locate name: ' + error.message);
   }
 }
 
@@ -114,7 +114,7 @@ async function getUserByEmail(email) {
       rows: [user],
     } = await client.query(
       `
-      SELECT id, name
+      SELECT id, name, password, email
       FROM users
       WHERE email = $1
       `,
@@ -124,38 +124,62 @@ async function getUserByEmail(email) {
     if (!user) {
       return null;
     }
-
+    delete user.password;
     return user;
   } catch (error) {
     throw new Error('Could not locate user email: ' + error.message);
   }
 }
 
-async function updateUser(userId, { name, email, password, role }, requestingUserRole) {
+async function updateUser(userId, updatedFields, requestingUserRole) {
   try {
-    if (requestingUserRole !== 'admin') {
-      throw new Error('Only admin users can update roles.');
+    const { name, email, password, role } = updatedFields;
+
+    if (requestingUserRole !== 'admin' && userId !== updatedFields.userId) {
+      throw new Error('You do not have permission to update this user.');
+    }
+
+    // Check if the updated email already exists in the database
+    if (email) {
+      const existingUser = await getUserByEmail(email);
+      if (existingUser && existingUser.id !== userId) {
+        throw new Error('Email already exists for another user.');
+      }
     }
 
     const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
 
-    const { rows: [user] } = await client.query(
-      `
+    let query = `
       UPDATE users
-      SET name = $1, email = $2, password = $3, role = $4
-      WHERE id = $5
-      RETURNING *;
-      `,
-      [name, email, hashedPassword, role, userId]
-    );
+      SET name = $1, email = $2
+    `;
 
-    if (!user) {
+    const values = [name, email];
+
+    if (hashedPassword) {
+      query += ', password = $3';
+      values.push(hashedPassword);
+    }
+
+    if (requestingUserRole === 'admin') {
+      query += ', role = $' + (values.length + 1);
+      values.push(role);
+    }
+
+    query += `
+      WHERE id = $${values.length + 1}
+      RETURNING *;
+    `;
+
+    const { rows: [updatedUser] } = await client.query(query, [...values, userId]);
+
+    if (!updatedUser) {
       throw new Error(`User with ID ${userId} not found.`);
     }
 
-    delete user.password;
+    delete updatedUser.password;
 
-    return user;
+    return updatedUser;
   } catch (error) {
     throw new Error(`Could not update user: ${error.message}`);
   }
@@ -163,25 +187,30 @@ async function updateUser(userId, { name, email, password, role }, requestingUse
 
 async function deleteUser(userId, requestingUserRole) {
   try {
-
     if (requestingUserRole !== 'admin') {
       throw new Error('Only admin users can delete users.');
     }
 
-    await client.query(
+    const result = await client.query(
       `
       UPDATE users
       SET role = 'deleted'
       WHERE id = $1
+      RETURNING *;
       `,
       [userId]
     );
+
+    if (result.rowCount === 0) {
+      throw new Error(`User with ID ${userId} not found.`);
+    }
 
     return true;
   } catch (error) {
     throw new Error('Could not delete user: ' + error.message);
   }
 }
+
 
 module.exports = {
   createUser,

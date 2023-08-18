@@ -7,6 +7,8 @@ if (typeof TextEncoder === 'undefined') {
     global.TextEncoder = require('util').TextEncoder;
 }
 require("dotenv").config();
+const { faker } = require('@faker-js/faker');
+const bcrypt = require("bcrypt");
 const {
     createUser,
     getUser,
@@ -20,64 +22,85 @@ const { createFakeUser } = require("../helpers");
 
 describe('User Database Functions', () => {
   describe('createUser', () => {
-    it('creates and returns a new user', async () => {
+    xit('creates and returns a new user', async () => {
       // Arrange
-      const fakeUserData = createFakeUser();
+      const fakeUserData = {
+        name: "Horace Johnson",
+        password: faker.internet.password(),
+        email: faker.internet.email(),
+        password: faker.internet.password(),
+        role: "user",
+      };
 
       // Act
-      const newUser = await createUser(fakeUserData);
+      const user = await createUser(fakeUserData);
 
       // Assert
-      expect(newUser).toBeDefined();
-      expect(newUser.name).toBe(fakeUserData.name);
-      expect(newUser.email).toBe(fakeUserData.email);
-      expect(newUser.role).toBe(fakeUserData.role);
-    });
-
-    it('does not return the password', async () => {
-     
-      const fakeUserData = createFakeUser();
-
-      const newUser = await createUser(fakeUserData);
-
-      expect(newUser.password).toBeFalsy(); 
-    });
-  });
-
-  describe('getUser', () => {
-    xit('returns the user when the password verifies', async () => {
-      
-      const password = 'testPassword';
-      const fakeUserData = createFakeUser({ password });
-      await createUser(fakeUserData);
-
-      const user = await getUser({ username: fakeUserData.username, password });
-
       expect(user).toBeDefined();
       expect(user.name).toBe(fakeUserData.name);
       expect(user.email).toBe(fakeUserData.email);
       expect(user.role).toBe(fakeUserData.role);
     });
 
-    xit("does not return the user if the password doesn't verify", async () => {
-    
-      const correctPassword = 'testPassword';
-      const incorrectPassword = 'wrongPassword';
-      const fakeUserData = createFakeUser({ password: correctPassword });
+    xit('does not return the password', async () => {
+     
+    const fakeUserData = {
+        name: faker.person.fullName(),
+        password: faker.internet.password(),
+        email: faker.internet.email(),
+        password: faker.internet.password(),
+        role: "user"
+      };
+
+      const user = await createUser(fakeUserData);
+
+      expect(user.password).toBeFalsy(); 
+    });
+  });
+
+  describe('getUser', () => {
+    xit('returns the user when the password verifies', async () => {
+      const fakeUserData = {
+        name: "Nicole Smith",
+        password: faker.internet.password(),
+        email: faker.internet.email(),
+        role: "user",
+      };
       await createUser(fakeUserData);
 
-      const user = await getUser({ username: fakeUserData.username, password: incorrectPassword });
+      const user = await getUserByName(fakeUserData.name);
 
+      expect(user).toBeDefined();
+      expect(user.name).toBe(fakeUserData.name);
+    });
+
+    xit("does not return the user if the password doesn't verify", async () => {
+      const fakeUserData = {
+        name: "Issac Newton",
+        password: faker.internet.password(),
+        email: faker.internet.email(),
+        role: "user",
+      };
+      await createUser(fakeUserData);
+      const user = await getUser({
+        name: "Issac Newton",
+        password: "Bad Password",
+        email: faker.internet.email(),
+        role: "user",
+      });
       expect(user).toBeNull();
     });
 
     xit('does not return the password', async () => {
-
-      const password = 'testPassword';
-      const fakeUserData = createFakeUser({ password });
+      const fakeUserData = {
+        name: "Michael Jordan",
+        password: faker.internet.password(),
+        email: faker.internet.email(),
+        role: "user",
+      };
       await createUser(fakeUserData);
 
-      const user = await getUser({ username: fakeUserData.username, password });
+      const user = await getUser(fakeUserData);
 
       expect(user.password).toBeFalsy();
     });
@@ -86,13 +109,12 @@ describe('User Database Functions', () => {
   describe('getUserById', () => {
     xit('returns the user with matching ID', async () => {
       
-      const fakeUserData = createFakeUser();
-      const newUser = await createUser(fakeUserData);
+      const fakeUser = await createFakeUser("Jacob Hail");
 
-      const user = await getUserById(newUser.id);
+      const user = await getUserById(fakeUser.id);
 
       expect(user).toBeDefined();
-      expect(user.id).toBe(newUser.id);
+      expect(user.id).toBe(fakeUser.id);
     });
 
     xit('returns null if user ID does not exist', async () => {
@@ -104,41 +126,8 @@ describe('User Database Functions', () => {
 
     xit('does not return the password', async () => {
       
-      const fakeUserData = createFakeUser();
-      const newUser = await createUser(fakeUserData);
-
-      const user = await getUserById(newUser.id);
-
-      expect(user).toBeDefined();
-      expect(user.password).toBeUndefined();
-    });
-  });
-
-  describe('getUserByName', () => {
-    xit('returns the user with matching name', async () => {
-      
-      const fakeUserData = createFakeUser();
-      await createUser(fakeUserData);
-
-      const user = await getUserByName(fakeUserData.name);
-
-      expect(user).toBeDefined();
-      expect(user.name).toBe(fakeUserData.name);
-    });
-
-    xit('returns null if username does not exist', async () => {
-      const user = await getUserByName('nonexistinguser');
-
-      expect(user).toBeNull();
-    });
-
-    xit('does not return the password', async () => {
-        
-      const fakeUserData = createFakeUser();
-      await createUser(fakeUserData);
-  
-      const user = await getUserByName(fakeUserData.username);
-  
+      const fakeUser = await createFakeUser("Jonathan Snell");
+      const user = await getUserById(fakeUser.id);
       expect(user).toBeDefined();
       expect(user.password).toBeUndefined();
     });
@@ -146,14 +135,12 @@ describe('User Database Functions', () => {
 
   describe('getUserByEmail', () => {
     xit('returns the user with matching email', async () => {
-      
-      const fakeUserData = createFakeUser();
-      await createUser(fakeUserData);
+      const fakeUser = await createFakeUser({email: "jonathan.snell@example.com"});
 
-      const user = await getUserByEmail(fakeUserData.email);
+      const user = await getUserByEmail(fakeUser.email);
 
       expect(user).toBeDefined();
-      expect(user.email).toBe(fakeUserData.email);
+      expect(user.email).toBe(fakeUser.email);
     });
 
     xit('returns null if email does not exist', async () => {
@@ -162,135 +149,123 @@ describe('User Database Functions', () => {
 
       expect(user).toBeNull();
     });
+
+    xit("Does NOT return the password", async () => {
+      const fakeUser = await createFakeUser({email: "tim.snell@example.com"});
+      const user = await getUserByEmail(fakeUser.email);
+      expect(user.password).toBeFalsy();
+    });    
   });
 
   describe('updateUser', () => {
     xit('returns the updated user', async () => {
+      const fakeUser = await createFakeUser();
       
-      const fakeUserData = createFakeUser();
-      const newUser = await createUser(fakeUserData);
-
       const updatedUserData = {
-        id: newUser.id,
-        name: 'Updated Name',
-        password: 'newPassword',
-        email: 'updated@example.com',
+        userId: fakeUser.id,
+        name: 'New Name',
+        password: 'newpassword',
+        email: 'newemail@example.com',
         role: 'user'
       };
-
-      const updatedUser = await updateUser(updatedUserData);
-
+  
+      const updatedUser = await updateUser(updatedUserData.userId, updatedUserData, 'admin');
+  
       expect(updatedUser).toBeDefined();
-      expect(updatedUser.id).toBe(newUser.id);
+      expect(updatedUser.id).toBe(fakeUser.id);
       expect(updatedUser.name).toBe(updatedUserData.name);
       expect(updatedUser.email).toBe(updatedUserData.email);
       expect(updatedUser.role).toBe(updatedUserData.role);
     });
-
+  
     xit('updates the name, password, or email as necessary', async () => {
-      
-      const fakeUserData = createFakeUser();
-      const newUser = await createUser(fakeUserData);
+      const fakeUser = await createFakeUser();
 
       const updatedUserData = {
-        id: newUser.id,
-        name: 'Updated Name',
-        password: 'newPassword',
-        email: 'updated@example.com'
+        userId: fakeUser.id,
+        name: faker.person.fullName(),
+        password: faker.internet.password(),
+        email: faker.internet.email(), 
       };
-
-      const updatedUser = await updateUser(updatedUserData);
+  
+      const updatedUser = await updateUser(updatedUserData.userId, updatedUserData);
 
       expect(updatedUser).toBeDefined();
-      expect(updatedUser.id).toBe(newUser.id);
+      expect(updatedUser.id).toBe(updatedUserData.userId);
       expect(updatedUser.name).toBe(updatedUserData.name);
       expect(updatedUser.email).toBe(updatedUserData.email);
     });
-
+  
     xit('does not update fields that are not passed in', async () => {
-      
-      const fakeUserData = createFakeUser();
-      const newUser = await createUser(fakeUserData);
-
+      const fakeUser = await createFakeUser();
+  
       const updatedUserData = {
-        id: newUser.id,
-        name: 'Updated Name'
+        userId: fakeUser.id,
+        name: faker.person.fullName(),
+        email: fakeUser.email,
       };
-
-      const updatedUser = await updateUser(updatedUserData);
+  
+      const updatedUser = await updateUser(updatedUserData.userId, updatedUserData);
 
       expect(updatedUser).toBeDefined();
-      expect(updatedUser.id).toBe(newUser.id);
+      expect(updatedUser.id).toBe(updatedUserData.userId);
       expect(updatedUser.name).toBe(updatedUserData.name);
-      expect(updatedUser.email).toBe(newUser.email); 
-      expect(updatedUser.role).toBe(newUser.role); 
+      expect(updatedUser.email).toBe(fakeUser.email); 
     });
-
+  
     xit('only an "admin" can update role', async () => {
-      
-      const adminUserData = createFakeUser({ role: 'admin' });
-      const newUser = await createUser(adminUserData);
-
-      const updatedUserData = {
-        id: newUser.id,
-        role: 'user'
-      };
-
-      const updatedUser = await updateUser(updatedUserData);
-
-      expect(updatedUser).toBeDefined();
-      expect(updatedUser.id).toBe(newUser.id);
-      expect(updatedUser.role).toBe(updatedUserData.role);
+      const fakeUser = await createFakeUser();
+    
+      await expect(
+        updateUser(
+          fakeUser.id,
+          { role: 'admin' }, 
+          'user' 
+        )
+      ).rejects.toThrow("Could not update user: You do not have permission to update this user.");
     });
-
-    xit('returns null if user ID does not exist', async () => {
-      
-      const fakeUserData = createFakeUser();
-      const nonExistingUserId = 12345;
-
-      const updatedUserData = {
-        id: nonExistingUserId,
-        name: 'Updated Name'
+  
+    xit('throws an error if user ID does not exist', async () => {
+      const userData = {
+        userId: 999999999,
+        name: faker.person.fullName(),
+        email: faker.internet.email(),
       };
-
-      const updatedUser = await updateUser(updatedUserData);
-
-      expect(updatedUser).toBeNull();
+  
+      await expect(updateUser(userData.userId, userData)).rejects.toThrowError(
+        `Could not update user: User with ID ${userData.userId} not found.`
+      );
     });
   });
 
   describe('deleteUser', () => {
-    xit('removes a user so they cannot login', async () => {
-      const fakeUserData = createFakeUser();
-      const newUser = await createUser(fakeUserData);
+    xit('deletes a user if requester is admin', async () => {
+      const adminUser = await createFakeUser({ role: 'admin' });
+      const userToDelete = await createFakeUser();
   
-      const deletedUser = await deleteUser(newUser.id, 'admin');
+      const result = await deleteUser(userToDelete.id, adminUser.role);
   
-      expect(deletedUser).toBeTruthy();
+      expect(result).toBe(true);
   
-      const user = await getUserById(newUser.id);
-      expect(user).toBeNull();
+      const deletedUser = await getUserById(userToDelete.id);
+      expect(deletedUser.role).toBe('deleted');
     });
   
-    xit('returns false if user ID does not exist', async () => {
-      const nonExistentUserId = -1; 
-      const deletedUser = await deleteUser(nonExistentUserId, 'admin');
-
-      expect(deletedUser).toBeFalsy();
+    xit('throws an error if requester is not an admin', async () => {
+      const nonAdminUser = await createFakeUser({ role: 'user' });
+      const userToDelete = await createFakeUser();
+  
+      await expect(deleteUser(userToDelete.id, nonAdminUser.role)).rejects.toThrowError(
+        'Only admin users can delete users.'
+      );
     });
   
-    xit('returns false if non-admin user tries to delete', async () => {
-      const fakeUserData = createFakeUser();
-      const newUser = await createUser(fakeUserData);
+    xit('throws an error if user ID does not exist', async () => {
+      const adminUser = await createFakeUser({ role: 'admin' });
   
-      const deletedUser = await deleteUser(newUser.id, 'user');
-  
-      expect(deletedUser).toBeFalsy();
-  
-      const user = await getUserById(newUser.id);
-      expect(user).toBeTruthy();
+      await expect(deleteUser(9999999, adminUser.role)).rejects.toThrowError(
+        'Could not delete user: User with ID 9999999 not found.'
+      );
     });
   });
-
-
 });

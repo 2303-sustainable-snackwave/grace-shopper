@@ -195,8 +195,6 @@ async function deleteUser(userId, requestingUserRole) {
       `
       UPDATE users
       SET role = 'deleted'
-      UPDATE users
-      SET role = 'deleted'
       WHERE id = $1
       `,
       [userId]

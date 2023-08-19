@@ -34,8 +34,30 @@ const createFakeUserWithToken = async (email) => {
     };
 };
 
+const createFakeBikeProduct = async (overrides = {}) => {
+  const fakeBikeData = {
+    category: 'Bikes',
+    brand: faker.company.companyName(),
+    name: `Bike - ${faker.commerce.productName()}`,
+    imageUrl: faker.image.imageUrl(),
+    description: `A ${faker.lorem.word()} bike for outdoor adventures.`,
+    min_price: faker.random.number({ min: 200, max: 500 }),
+    max_price: faker.random.number({ min: 501, max: 1000 }),
+    currency_code: 'USD',
+    amount: faker.random.number({ min: 10, max: 30 }),
+    availability: true,
+    total_inventory: faker.random.number({ min: 5, max: 20 }),
+  };
+  const bikeProduct = await createProducts({ ...fakeBikeData, ...overrides }, adminUser.role);
+  if (!bikeProduct) {
+    throw new Error("createProducts didn't return a bike product");
+  }
+  return { ...bikeProduct, ...overrides };
+};
+
 
 module.exports = {
     createFakeUser,
-    createFakeUserWithToken
+    createFakeUserWithToken,
+    createFakeBikeProduct
 }

@@ -64,4 +64,6 @@ module.exports = {
     createFakeUser,
     createFakeUserWithToken,
     createFakeBikeProduct
+    createFakeUserWithToken,
+    createFakeBikeProduct
 }

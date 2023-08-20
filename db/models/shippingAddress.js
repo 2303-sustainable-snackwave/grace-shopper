@@ -1,4 +1,4 @@
-const client = require("./client");
+const client = require("../client");
 
 async function createShippingAddress(userId, street, city, state, postalCode, country) {
     try {

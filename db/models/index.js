@@ -6,6 +6,7 @@ module.exports = {
     ...require('./users'),
     ...require('./billingAddress'),
     ...require('./shippingAddress'),
+    ...require('./products')
   };
   
   // then, in your API, you'll require the appropriate model

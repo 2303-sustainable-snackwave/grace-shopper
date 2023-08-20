@@ -17,23 +17,45 @@ async function createShippingAddress(userId, street, city, state, postalCode, co
     }
 }
 
-async function getShippingAddressByUserId(userId) {
-    try {
-      const { rows } = await client.query(
-        `SELECT * 
-        FROM shipping_addresses 
-        WHERE user_id = $1
-        `, 
-        [userId]);
+async function addShippingAddressToUser(userId, shippingAddressList) {
+  try {
+      const createdShippingAddresses = [];
+      for (const shippingAddress of shippingAddressList) {
+          const createdAddress = await createShippingAddress(
+              userId,
+              shippingAddress.street,
+              shippingAddress.city,
+              shippingAddress.state,
+              shippingAddress.postalCode,
+              shippingAddress.country
+          );
+          createdShippingAddresses.push(createdAddress);
+      }
 
-      return rows[0];
-    } catch (error) {
-      throw new Error('Could not get shipping address: ' + error.message);
-    }
+      return createdShippingAddresses;
+  } catch (error) {
+      throw error;
+  }
+}
+
+async function getShippingAddressByUserId(userId) {
+  try {
+    const { rows } = await client.query(
+      `SELECT * 
+      FROM shipping_addresses 
+      WHERE user_id = $1
+      `, 
+      [userId]);
+
+    return rows;
+  } catch (error) {
+    throw new Error('Could not get shipping address: ' + error.message);
+  }
 }
 
 
 module.exports = {
   createShippingAddress,
-  getShippingAddressByUserId
+  getShippingAddressByUserId,
+  addShippingAddressToUser
 }

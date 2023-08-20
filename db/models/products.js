@@ -126,12 +126,33 @@ async function getAllProducts() {
 //   } catch (error) {}
 // }
 
-async function updateProduct({ id, ...fields }, requestingUserRole) {
+async function updateProduct(productId, updatedFields, requestingUserRole) {
   try {
-    if (requestingUserRole !== "admin") {
-      throw new Error("Only admin users can update products.");
+    const { 
+      category, 
+      brand, 
+      name, 
+      image_url, 
+      description , 
+      min_price, 
+      max_price, 
+      currency_code, 
+      amount, 
+      availability,
+      total_inventory     
+    } = updatedFields;
+
+    if (requestingUserRole !== 'admin') {
+      throw new Error('Only admin users can update products.');
     }
-    const updateFields = Object.keys(fields)
+
+    // Check if the product with the given productId exists
+    const existingProduct = await getProductById(productId);
+    if (!existingProduct) {
+      throw new Error(`Product with ID ${productId} not found.`);
+    }
+
+    const updateFields = Object.keys(updatedFields)
       .map((key, index) => `"${key}" = $${index + 1}`)
       .join(", ");
 
@@ -144,7 +165,7 @@ async function updateProduct({ id, ...fields }, requestingUserRole) {
       WHERE id=$${values.length + 1}
       RETURNING *;
       `,
-      [...values, id]
+      [...values, productId]
     );
     const updatedProduct = rows[0];
 
@@ -174,13 +195,13 @@ async function destroyProduct(id, requestingUserRole) {
       }
       }
 
-      await client.query(
-        `
-        DELETE FROM product_orders
-        WHERE "productId" = $1
-        `,
-        [id]
-      );
+      // await client.query(
+      //   `
+      //   DELETE FROM product_orders
+      //   WHERE "productId" = $1
+      //   `,
+      //   [id]
+      // );
 
       const { rowCount } = await client.query(
         `

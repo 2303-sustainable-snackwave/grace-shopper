@@ -8,10 +8,7 @@ router.use(bodyParser.json());
 const {
     createOrder,
     updateOrder,
-    deleteOrder
-} = require('../db/models/orders');
-
-const {
+    deleteOrder,
     getAllOrders
 } = require('../db/models/orders');
 

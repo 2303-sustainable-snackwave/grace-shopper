@@ -97,6 +97,7 @@ async function getAllProducts() {
             SELECT *
             FROM products;
         `);
+        return products;
   } catch (error) {}
 }
 

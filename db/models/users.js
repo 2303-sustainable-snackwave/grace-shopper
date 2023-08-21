@@ -1,10 +1,18 @@
 const bcrypt = require('bcrypt');
 const client = require("../client");
+const { addBillingAddressToUser, getBillingAddressByUserId } = require('./billingAddress');
+const { addShippingAddressToUser, getShippingAddressByUserId } = require('./shippingAddress');
 
 // database functions
 
 // user functions
-async function createUser({ name, email, password, role }) {
+async function createUser({ 
+  name, 
+  email, 
+  password, 
+  role, 
+  billingAddressList,
+  shippingAddressList}) {
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -18,6 +26,15 @@ async function createUser({ name, email, password, role }) {
     );
 
     delete user.password;
+
+
+    if (billingAddressList && billingAddressList.length > 0) {
+      await addBillingAddressToUser(user.id, billingAddressList);
+    }
+
+    if (shippingAddressList && shippingAddressList.length > 0) {
+      await addShippingAddressToUser(user.id, shippingAddressList);
+    }
 
     return user;
   } catch (error) {
@@ -74,16 +91,20 @@ async function getUserById(userId) {
       `,
       [userId]
     );
+    user.billing_addresses = await getBillingAddressByUserId(userId);
+    user.shipping_addresses = await getShippingAddressByUserId(userId);
   
     if (!user) {
       return null;
     }
     delete user.password;
     return user;
-  } catch (error) { 
-    throw new Error('Could not locate user with id: ' + error.message);
+  } catch (error) {
+    throw new Error('Could not get user: ' + error.message);
   }
 }
+
+
 
 async function getUserByName(name) {
   try {

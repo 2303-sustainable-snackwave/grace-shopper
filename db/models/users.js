@@ -6,10 +6,17 @@ const { addShippingAddressToUser, getShippingAddressByUserId } = require('./ship
 // database functions
 
 // user functions
-async function createUser({ name, email, password,
-  billingAddressList, shippingAddressList }) {
+async function createUser({
+  name,
+  email,
+  password,
+  addresses: { billingAddressList, shippingAddressList },
+}) {
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Start a transaction
+    await client.query('BEGIN');
 
     // Start a transaction
     await client.query('BEGIN');
@@ -36,8 +43,13 @@ async function createUser({ name, email, password,
     // Commit the transaction
     await client.query('COMMIT');
 
+    // Commit the transaction
+    await client.query('COMMIT');
+
     return user;
   } catch (error) {
+    // Rollback the transaction on error
+    await client.query('ROLLBACK');
     // Rollback the transaction on error
     await client.query('ROLLBACK');
     throw new Error('Could not create user: ' + error.message);

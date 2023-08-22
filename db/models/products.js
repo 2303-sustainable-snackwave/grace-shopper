@@ -29,10 +29,10 @@ async function getProductById(id) {
   try {
     const { rows } = await client.query(
       `
-            SELECT *
-            FROM products
-            WHERE id = $1;
-            `,
+      SELECT *
+      FROM products
+      WHERE id = $1;
+      `,
       [id]
     );
 
@@ -49,11 +49,12 @@ async function getProductById(id) {
 async function getProductsWithoutOrders() {
   try {
     const { rows } = await client.query(`
-            SELECT *
-            FROM products
-            LEFT JOIN product_orders ON product.id = product_orders."product.id"
-            WHERE product_orders.id IS NULL;
-        `);
+      SELECT *
+      FROM products
+      LEFT JOIN product_orders ON product.id = product_orders."product.id"
+      WHERE product_orders.id IS NULL;
+    `);
+
     if (rows.length === 0) {
       return null;
     }
@@ -68,16 +69,14 @@ async function getAllProducts() {
   // temporary until .db/orders.js is finished
   try {
     const { rows: products } = await client.query(`
-            SELECT *
-            FROM products;
-        `);
-  } catch (error) {}
-}
+      SELECT *
+      FROM products;
+    `);
 
-async function getAllProductsByOrders({ orders }) {
-  // Needs to built out after orders
-  try {
-  } catch (error) {}
+    return products;
+  } catch (error) {
+    throw new Error('Could not locate products: ' + error.message);
+  }
 }
 
 async function getProductsByOrdered({ id }) {
@@ -86,9 +85,12 @@ async function getProductsByOrdered({ id }) {
   } catch (error) {}
 }
 
-async function updateProduct({ id, ...fields }) {
-  try {
-    const updateFields = Object.keys(fields)
+    const existingProduct = await getProductById(productId);
+    if (!existingProduct) {
+      throw new Error(`Product with ID ${productId} not found.`);
+    }
+
+    const updateFields = Object.keys(updatedFields)
       .map((key, index) => `"${key}" = $${index + 1}`)
       .join(", ");
 
@@ -144,15 +146,6 @@ async function destroyProduct(id) {
         throw error;
     }
 }
-
-module.exports = {
-  createProducts,
-  getProductById,
-  getProductsWithoutOrders,
-  getAllProducts,
-  updateProduct,
-  destroyProduct
-};
 
 module.exports = {
   createProducts,

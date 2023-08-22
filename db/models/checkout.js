@@ -1,4 +1,4 @@
-const stripe = require('stripe')('SECRET_KEY'); // Replace secret_key
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const client = require('./client');
 
 async function createCheckoutSession({ lineItems, successUrl, cancelUrl }) {

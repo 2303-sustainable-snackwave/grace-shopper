@@ -25,6 +25,7 @@ async function createUser({
       RETURNING *;
       `,
       [name, email, hashedPassword, 'user']
+      [name, email, hashedPassword, 'user']
     );
 
     delete user.password;
@@ -205,6 +206,7 @@ async function updateUser(userId, updatedFields, requestingUserRole) {
 
     return updatedUser;
   } catch (error) {
+    throw new Error('Could not update user: ' + error.message);
     throw new Error('Could not update user: ' + error.message);
   }
 }

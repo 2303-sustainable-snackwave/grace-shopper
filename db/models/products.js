@@ -58,10 +58,10 @@ async function getProductById(id) {
   try {
     const { rows } = await client.query(
       `
-            SELECT *
-            FROM products
-            WHERE id = $1;
-            `,
+      SELECT *
+      FROM products
+      WHERE id = $1;
+      `,
       [id]
     );
 
@@ -78,11 +78,12 @@ async function getProductById(id) {
 async function getProductsWithoutOrders() {
   try {
     const { rows } = await client.query(`
-            SELECT *
-            FROM products
-            LEFT JOIN product_orders ON product.id = product_orders."product.id"
-            WHERE product_orders.id IS NULL;
-        `);
+      SELECT *
+      FROM products
+      LEFT JOIN product_orders ON product.id = product_orders."product.id"
+      WHERE product_orders.id IS NULL;
+    `);
+
     if (rows.length === 0) {
       return null;
     }
@@ -96,17 +97,14 @@ async function getProductsWithoutOrders() {
 async function getAllProducts() {
   try {
     const { rows: products } = await client.query(`
-            SELECT *
-            FROM products;
-        `);
-        return products;
-  } catch (error) {}
-}
+      SELECT *
+      FROM products;
+    `);
 
-async function getAllProductsByOrders({ orders }) {
-  // Needs to built out after orders
-  try {
-  } catch (error) {}
+    return products;
+  } catch (error) {
+    throw new Error('Could not locate products: ' + error.message);
+  }
 }
 
 // async function getAllProductsByOrders({ orders }) {
@@ -141,7 +139,6 @@ async function updateProduct(productId, updatedFields, requestingUserRole) {
       throw new Error('Only admin users can update products.');
     }
 
-    // Check if the product with the given productId exists
     const existingProduct = await getProductById(productId);
     if (!existingProduct) {
       throw new Error(`Product with ID ${productId} not found.`);

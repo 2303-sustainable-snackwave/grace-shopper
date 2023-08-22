@@ -6,15 +6,17 @@ const { addShippingAddressToUser, getShippingAddressByUserId } = require('./ship
 // database functions
 
 // user functions
-async function createUser({ 
-  name, 
-  email, 
-  password, 
-  role, 
-  billingAddressList,
-  shippingAddressList}) {
+async function createUser({
+  name,
+  email,
+  password,
+  addresses: { billingAddressList, shippingAddressList },
+}) {
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Start a transaction
+    await client.query('BEGIN');
 
     const { rows: [user] } = await client.query(
       `
@@ -27,7 +29,6 @@ async function createUser({
 
     delete user.password;
 
-
     if (billingAddressList && billingAddressList.length > 0) {
       await addBillingAddressToUser(user.id, billingAddressList);
     }
@@ -36,8 +37,13 @@ async function createUser({
       await addShippingAddressToUser(user.id, shippingAddressList);
     }
 
+    // Commit the transaction
+    await client.query('COMMIT');
+
     return user;
   } catch (error) {
+    // Rollback the transaction on error
+    await client.query('ROLLBACK');
     throw new Error('Could not create user: ' + error.message);
   }
 }
@@ -104,8 +110,6 @@ async function getUserById(userId) {
   }
 }
 
-
-
 async function getUserByName(name) {
   try {
     const {
@@ -160,7 +164,6 @@ async function updateUser(userId, updatedFields, requestingUserRole) {
       throw new Error('You do not have permission to update this user.');
     }
 
-    // Check if the updated email already exists in the database
     if (email) {
       const existingUser = await getUserByEmail(email);
       if (existingUser && existingUser.id !== userId) {

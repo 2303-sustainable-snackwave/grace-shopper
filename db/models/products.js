@@ -15,7 +15,6 @@ async function createProducts({
     availability,
     total_inventory,
 }, requestingUserRole) {
-}, requestingUserRole) {
   try {
     if (requestingUserRole !== "admin") {
       throw new Error("Only admin users can create products.");
@@ -146,7 +145,6 @@ async function updateProduct(productId, updatedFields, requestingUserRole) {
       throw new Error('Only admin users can update products.');
     }
 
-    // Check if the product with the given productId exists
     const existingProduct = await getProductById(productId);
     if (!existingProduct) {
       throw new Error(`Product with ID ${productId} not found.`);

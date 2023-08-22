@@ -14,7 +14,7 @@ async function createProducts({
     amount,
     availability,
     total_inventory,
-}) {
+}, requestingUserRole) {
   try {
     if (requestingUserRole !== "admin") {
       throw new Error("Only admin users can create products.");
@@ -139,11 +139,10 @@ async function updateProduct(productId, updatedFields, requestingUserRole) {
       throw new Error('Only admin users can update products.');
     }
 
-async function getProductsByOrdered({ id }) {
-  // fleshout after db/orders.js
-  try {
-  } catch (error) {}
-}
+    const existingProduct = await getProductById(productId);
+    if (!existingProduct) {
+      throw new Error(`Product with ID ${productId} not found.`);
+    }
 
     const updateFields = Object.keys(updatedFields)
       .map((key, index) => `"${key}" = $${index + 1}`)

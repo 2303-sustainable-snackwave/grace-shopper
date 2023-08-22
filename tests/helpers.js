@@ -11,6 +11,10 @@ const createFakeUser = async (overrides = {}) => {
     email: faker.internet.email(),
     password: faker.internet.password(),
     role: "user",
+    addresses: {
+      billingAddressList: [],
+      shippingAddressList: []
+    }
   };
   const user = await createUser({ ...fakeUserData, ...overrides });
   if (!user) {

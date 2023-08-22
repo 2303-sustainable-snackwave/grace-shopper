@@ -234,7 +234,6 @@ async function deleteUser(userId, requestingUserRole) {
   }
 }
 
-
 module.exports = {
   createUser,
   getUser,

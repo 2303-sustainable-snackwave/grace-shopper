@@ -14,8 +14,11 @@ async function createProducts({
     amount,
     availability,
     total_inventory,
-}) {
+}, requestingUserRole) {
   try {
+    if (requestingUserRole !== "admin") {
+      throw new Error("Only admin users can create products.");
+    }
     const {
       rows: [products],
     } = await client.query(
@@ -47,7 +50,7 @@ async function createProducts({
     );
     return products;
   } catch (error) {
-    throw error;
+    throw new Error('Could not create product: ' + error.message);
   }
 }
 
@@ -55,10 +58,10 @@ async function getProductById(id) {
   try {
     const { rows } = await client.query(
       `
-            SELECT *
-            FROM products
-            WHERE id = $1;
-            `,
+      SELECT *
+      FROM products
+      WHERE id = $1;
+      `,
       [id]
     );
 
@@ -68,108 +71,137 @@ async function getProductById(id) {
 
     return rows[0];
   } catch (error) {
-    throw error;
+    throw new Error('Could not locate product: ' + error.message);
   }
 }
 
 async function getProductsWithoutOrders() {
   try {
     const { rows } = await client.query(`
-            SELECT *
-            FROM products
-            LEFT JOIN product_orders ON product.id = product_orders."product.id"
-            WHERE product_orders.id IS NULL;
-        `);
+      SELECT *
+      FROM products
+      LEFT JOIN product_orders ON product.id = product_orders."product.id"
+      WHERE product_orders.id IS NULL;
+    `);
+
     if (rows.length === 0) {
       return null;
     }
 
     return rows;
   } catch (error) {
-    throw error;
+    throw new Error('Could not locate products: ' + error.message);
   }
 }
 
 async function getAllProducts() {
-  // temporary until .db/orders.js is finished
   try {
     const { rows: products } = await client.query(`
-            SELECT *
-            FROM products;
-        `);
-        return products;
-  } catch (error) {}
-}
+      SELECT *
+      FROM products;
+    `);
 
-async function getAllProductsByOrders({ orders }) {
-  // Needs to built out after orders
-  try {
-  } catch (error) {}
-}
-
-async function getProductsByOrdered({ id }) {
-  // fleshout after db/orders.js
-  try {
-  } catch (error) {}
-}
-
-async function updateProduct({ id, ...fields }) {
-  try {
-    const updateFields = Object.keys(fields)
-      .map((key, index) => `"${key}" = $${index + 1}`)
-      .join(", ");
-
-    const values = Object.values(fields);
-
-    const { rows } = await client.query(
-      `
-                UPDATE products
-                SET ${updateFields}
-                WHERE id=$${values.length + 1}
-                RETURNING *;
-                `,
-      [...values, id]
-    );
-    const updateProduct = rows[0];
-
-    return updateProduct;
+    return products;
   } catch (error) {
-    throw error;
+    throw new Error('Could not locate products: ' + error.message);
   }
 }
 
-async function destroyProduct(id) {
-    try {
-        const deletedProduct = await getProductById(id);
+// async function getAllProductsByOrders({ orders }) {
+//   // Needs to built out after orders
+//   try {
+//   } catch (error) {}
+// }
 
-        if (!deletedProduct) {
-            return null;
-        }
+// async function getProductsByOrdered({ id }) {
+//   // fleshout after db/orders.js
+//   try {
+//   } catch (error) {}
+// }
 
-        await client.query(
-            `
-            DELETE FROM product_orders
-            WHERE "productId" = $1
-            `,
-            [id]
-        );
+async function updateProduct(productId, updatedFields, requestingUserRole) {
+  try {
+    const { 
+      category, 
+      brand, 
+      name, 
+      image_url, 
+      description , 
+      min_price, 
+      max_price, 
+      currency_code, 
+      amount, 
+      availability,
+      total_inventory     
+    } = updatedFields;
 
-        const { rowCount } = await client.query(
-            `
-            DELETE FROM products
-            WHERE id = $1
-            `,
-            [id]
-        );
-
-        if (rowCount === 0) {
-            return null;
-        }
-
-        return deletedProduct;
-    } catch (error) {
-        throw error;
+    if (requestingUserRole !== 'admin') {
+      throw new Error('Only admin users can update products.');
     }
+
+    const existingProduct = await getProductById(productId);
+    if (!existingProduct) {
+      throw new Error(`Product with ID ${productId} not found.`);
+    }
+
+    const updateFields = Object.keys(updatedFields)
+      .map((key, index) => `"${key}" = $${index + 1}`)
+      .join(", ");
+
+    const values = Object.values(updatedFields);
+
+    const { rows } = await client.query(
+      `
+      UPDATE products
+      SET ${updateFields}
+      WHERE id=$${values.length + 1}
+      RETURNING *;
+      `,
+      [...values, productId]
+    );
+    const updatedProduct = rows[0];
+
+    return updatedProduct;
+  } catch (error) {
+    throw new Error('Could not update product: ' + error.message);
+  }
+}
+
+async function destroyProduct(id, requestingUserRole) {
+  try {
+    if (requestingUserRole !== "admin") {
+      throw new Error("Only admin users can delete products.");
+    }
+    const deletedProduct = await getProductById(id);
+
+      if (!deletedProduct) {
+            return null;
+      }
+
+      // await client.query(
+      //   `
+      //   DELETE FROM product_orders
+      //   WHERE "productId" = $1
+      //   `,
+      //   [id]
+      // );
+
+      const { rowCount } = await client.query(
+        `
+        DELETE FROM products
+        WHERE id = $1
+        `,
+        [id]
+      );
+
+      if (rowCount === 0) {
+        return null;
+      }
+
+    return deletedProduct;
+  } catch (error) {
+    throw new Error('Could not delete product: ' + error.message);
+  }
 }
 
 module.exports = {

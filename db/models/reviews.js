@@ -1,13 +1,13 @@
 const client = require("../client");
 
-async function createReview({ id, productId, userId, rating, reviewText, reviewDate }) {
+async function createReview({ productId, userId, rating, reviewText, reviewDate }) {
     try {
         const { rows } = await client.query(`
-        INSERT INTO reviews (id, ProductId, userId, rating, reviewText, reviewDate)
-        VALUES ($1, $2, $3, $4, $5, $6)
+        INSERT INTO reviews (ProductId, userId, rating, reviewText, reviewDate)
+        VALUES ($1, $2, $3, $4, $5)
         RETURNING *;
         `,
-            [id, productId, userId, rating, reviewText, reviewDate]
+            [productId, userId, rating, reviewText, reviewDate]
         );
 
         return rows[0];
@@ -19,13 +19,18 @@ async function createReview({ id, productId, userId, rating, reviewText, reviewD
 async function getAllReviews() {
     try {
         const { rows } = await client.query(`
-        SELECT *
-        FROM reviews
+        SELECT pr.id, pr.rating, pr.review_text, pr.review_date, 
+        u.name as reviewer_name, u.email as reviewer_email, 
+        p.name as product_name 
+        FROM product_reviews pr 
+        INNER JOIN users u ON pr.user_id = u.id 
+        INNER JOIN products p ON pr.product_id = p.id
         `);
 
         return rows;
     } catch (error) {
-        throw new Error('Error fetching reviews: ' + error.message);
+        console.error('Error fetching reviews:' + error.message);
+        throw new Error('An error occurred while fetching reviews.');
     }
 }
 

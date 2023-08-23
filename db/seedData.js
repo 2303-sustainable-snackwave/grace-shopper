@@ -1,4 +1,4 @@
-const {faker} = require('@faker-js/faker');
+const {faker} = require('@faker-js/faker').faker;
 const {createProducts, getAllProducts} = require('./models/products');
 const {createUser, getAllUsers, getUserById} = require('./models/users');
 const {createBillingAddress} = require('./models/billingAddress');

@@ -1,13 +1,13 @@
 const client = require("../client");
 
-async function createReview({ productId, reviewName, reviewerEmail, reviewDate }) {
+async function createReview({ id, productId, userId, rating, reviewText, reviewDate }) {
     try {
         const { rows } = await client.query(`
-        INSERT INTO Reviews (ProductId, ReviewName, reviewerEmail, reviewDate)
-        VALUES ($1, $2, $3, $4)
+        INSERT INTO reviews (id, ProductId, userId, rating, reviewText, reviewDate)
+        VALUES ($1, $2, $3, $4, $5, $6)
         RETURNING *;
         `,
-            [productId, reviewName, reviewerEmail, reviewDate]
+            [id, productId, userId, rating, reviewText, reviewDate]
         );
 
         return rows[0];
@@ -20,7 +20,7 @@ async function getAllReviews() {
     try {
         const { rows } = await client.query(`
         SELECT *
-        FROM Reviews
+        FROM reviews
         `);
 
         return rows;
@@ -33,8 +33,8 @@ async function getReviewsByProduct(productId) {
     try {
         const { rows } = await client.query(`
         SELECT * 
-        FROM Reviews 
-        WHERE ProductID = $1
+        FROM reviews 
+        WHERE productID = $1
         `,
             [productId]
         );

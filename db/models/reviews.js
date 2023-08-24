@@ -37,16 +37,19 @@ async function getAllReviews() {
 async function getReviewsByProduct(productId) {
     try {
         const { rows } = await client.query(`
-        SELECT * 
-        FROM reviews 
-        WHERE productID = $1
+        SELECT pr.id, pr.rating, pr.review_text, pr.review_date, 
+        u.name as reviewer_name, u.email as reviewer_email 
+        FROM product_reviews pr 
+        INNER JOIN users u ON pr.user_id = u.id 
+        WHERE pr.product_id = $1
         `,
             [productId]
         );
 
         return rows;
     } catch (error) {
-        throw new Error('Error fetching reviews for product: ' + error.message);
+        console.error('Error fetching reviews for product:' + error.message);
+        throw new Error('An error occurred while fethcing reviews for the product.');
     }
 }
 
@@ -55,5 +58,3 @@ module.exports = {
     getAllReviews,
     getReviewsByProduct,
 };
-
-

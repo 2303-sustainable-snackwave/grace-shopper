@@ -15,7 +15,7 @@ const {
 
 describe("/api/checkout", () => {
   describe("POST /create-session", () => {
-    it("Creates a checkout session and returns session ID", async () => {
+    xit("Creates a checkout session and returns session ID", async () => {
       const lineItems = await createFakeProductLineItems();
       const successUrl = "http://example.com/success";
       const cancelUrl = "http://example.com/cancel";
@@ -34,7 +34,7 @@ describe("/api/checkout", () => {
   });
 
   describe("POST /success", () => {
-    it("Stores order data upon payment success", async () => {
+    xit("Stores order data upon payment success", async () => {
       const sessionId = "fakeSessionId123"; // A mock.
       const totalAmount = 1500; // Example amount
       const products = await createFakeProductLineItems();

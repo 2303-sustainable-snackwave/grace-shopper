@@ -1,6 +1,5 @@
 # grace-shopper
 Grace shopper project
-<<<<<<< .merge_file_jY3Ixf
 Selling Bikes
 https://www.bikesonline.com
 # Endpoints

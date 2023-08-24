@@ -1,5 +1,6 @@
 # grace-shopper
 Grace shopper project
+<<<<<<< .merge_file_jY3Ixf
 Selling Bikes
 https://www.bikesonline.com
 # Endpoints
@@ -100,6 +101,14 @@ RESEARCH AI TO AUTO GENERATE PRODUCT DATA!
 Users
 # Research
     - Backend API *
+# GIT CHEATSHEET
+ git push --force origin
+ git branch
+ git checkout -b <branchName>
+=======
+check
+>>>>>>> .merge_file_t6bvPA
+> - Backend API *
 # GIT CHEATSHEET
  git push --force origin
  git branch

@@ -105,11 +105,3 @@ Users
  git push --force origin
  git branch
  git checkout -b <branchName>
-=======
-check
->>>>>>> .merge_file_t6bvPA
-> - Backend API *
-# GIT CHEATSHEET
- git push --force origin
- git branch
- git checkout -b <branchName>

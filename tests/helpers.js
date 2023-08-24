@@ -1,7 +1,7 @@
 const { faker } = require('@faker-js/faker');
 const { createUser, createProducts } = require("../db/models");
 const jwt = require("jsonwebtoken");
-const { JWT_SECRET = "neverTell" } = process.env;
+const JWT_SECRET = process.env.JWT_SECRET
 // This contains helper functions which create fake entries in the database
 // for the tests.
 

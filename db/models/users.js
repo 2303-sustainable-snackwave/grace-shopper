@@ -6,7 +6,8 @@ const { addShippingAddressToUser, getShippingAddressByUserId } = require('./ship
 // database functions
 
 // user functions
-async function createUser({ name, email, password }) {
+async function createUser({ name, email, password,
+  billingAddressList, shippingAddressList }) {
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -19,7 +20,6 @@ async function createUser({ name, email, password }) {
       VALUES ($1, $2, $3, $4)
       RETURNING *;
       `,
-      [name, email, hashedPassword, 'user']
       [name, email, hashedPassword, 'user']
     );
 

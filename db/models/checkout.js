@@ -1,5 +1,5 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const client = require('./client');
+const client = require('../client');
 
 async function createCheckoutSession({ lineItems, successUrl, cancelUrl }) {
     try {
@@ -16,31 +16,19 @@ async function createCheckoutSession({ lineItems, successUrl, cancelUrl }) {
     }
   }
   
-  async function createOrderInDatabase({ sessionID, totalAmount, products }) {
+  async function createOrderInDatabase({ sessionID, userID, orderDate, totalAmount,  billingAddressID, shippingAddressID, orderProducts }) {
     try {
       const { rows } = await client.query(
         `
-        INSERT INTO orders (session_id, total_amount)
-        VALUES ($1, $2)
+        INSERT INTO order_history (session_id, user_id, order_date, total_amount, billing_address_id, shipping_address_id, order_products)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
         RETURNING *;
         `,
-        [sessionID, totalAmount]
+        [sessionID, userID, orderDate, totalAmount, billingAddressID, shippingAddressID, orderProducts]
       );
+
   
-      const order = rows[0];
-  
-      
-      for (const product of products) {
-        await client.query(
-          `
-          INSERT INTO order_products (order_id, product_id)
-          VALUES ($1, $2);
-          `,
-          [order.id, product.id]
-        );
-      }
-  
-      return order;
+      return rows[0];
     } catch (error) {
       throw new Error('Could not create order in the database: ' + error.message);
     }

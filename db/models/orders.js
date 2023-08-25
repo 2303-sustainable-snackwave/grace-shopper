@@ -1,55 +1,26 @@
-const client = require("./client");
+const client = require("../client");
 
-async function createOrder({ product, orderDate, totalAmount }) {
+async function getOrderByUserId(userId) {
     try {
         const { rows } = await client.query(`
-        INSERT INTO Orders (Product, OrderDate, TotalAmount)
-        VALUES ($1, $2, $3)
-        RETURNING *;
+        SELECT oh.id, oh.user_id, oh.order_date, oh.total_amount, 
+        oh.shipping_address_id, oh.billing_address_id, oh.order_products
+        FROM order_history oh
+        INNER JOIN users u ON oh.user_id = u.id 
+        WHERE oh.user_id = $1
         `,
-            [product, orderDate, totalAmount]
+            [userId]
         );
+        
 
-        return rows[0];
+        return rows;
     } catch (error) {
-        throw new Error('Could not create order: ' + error.message);
+        console.error('Error fetching reviews for product:' + error.message);
+        throw new Error('An error occurred while fethcing reviews for the product.');
     }
 }
 
-async function getOrderById({ product, order, orderDate, totalAmount }) {
-    try {
-        const { rows } = await client.query(`
-        SELECT * 
-        FROM Orders
-        WHERE Id = $1
-        `,
-            [product, order, orderDate, totalAmount]
-        );
-
-        return rows[0]
-    } catch (error) {
-        throw new Error('Could not locate order with Id: ' + error.message);
-    }
-}
-
-async function createTotalAmount({ product, order }) {
-    try {
-        const { rows } = await client.query(`
-        INSERT INTO total_amount
-        VALUES ($1, $2)
-        RETURNING *;
-    `,
-            [product, order]
-        );
-
-        return rows[0]
-    } catch (error) {
-        throw new Error('Could not create total amount: ' + error.message);
-    }
-}
 
 module.exports = {
-    createOrder,
-    getOrderById,
-    createTotalAmount
+    getOrderByUserId
 }

@@ -2,7 +2,10 @@ const {faker} = require('@faker-js/faker');
 const {createProducts, getAllProducts} = require('./models/products');
 const {createUser, getAllUsers, getUserById} = require('./models/users');
 const {createBillingAddress} = require('./models/billingAddress');
-const {createShippingAddress, addShippingAddressToUser} = require('./models/shippingAddress');
+const {createShippingAddress} = require('./models/shippingAddress');
+const {createReview, getAllReviews, getReviewsByProduct} = require('./models/reviews');
+const {createOrderInDatabase} = require('./models/checkout');
+const {getOrderByUserId} = require('./models/orders');
 
 const client = require('./client');
 
@@ -10,13 +13,14 @@ async function dropTables() {
   try {
     console.log("Starting to drop table...");
 
-    // Add your SQL query to drop the products table here
     await client.query(`
       DROP TABLE IF EXISTS user_billing_addresses CASCADE; 
       DROP TABLE IF EXISTS billing_addresses CASCADE;
       DROP TABLE IF EXISTS user_shipping_addresses CASCADE; 
       DROP TABLE IF EXISTS shipping_addresses CASCADE;
       DROP TABLE IF EXISTS products CASCADE;
+      DROP TABLE IF EXISTS product_reviews CASCADE;
+      DROP TABLE IF EXISTS order_history CASCADE;
       DROP TABLE IF EXISTS users CASCADE;
     `);
 
@@ -31,7 +35,6 @@ async function createTables() {
   try {
     console.log("Starting to create table...");
 
-    // Add your SQL query to create the products table here
     await client.query(`
       CREATE TABLE users (
         id SERIAL PRIMARY KEY,
@@ -40,7 +43,6 @@ async function createTables() {
         password VARCHAR(255) NOT NULL,
         role VARCHAR(255) NOT NULL
       );
-
       CREATE TABLE products (
         id SERIAL PRIMARY KEY,
         category TEXT,
@@ -48,10 +50,10 @@ async function createTables() {
         name TEXT,
         imageUrl TEXT,
         description TEXT,
-        min_price JSONB,
-        max_price JSONB,
+        min_price DECIMAL(10, 2) NOT NULL,
+        max_price DECIMAL(10, 2) NOT NULL,
         currency_code TEXT,
-        amount INT,
+        amount DECIMAL(10, 2) NOT NULL,
         availability BOOLEAN,
         total_inventory INT
       );
@@ -85,6 +87,29 @@ async function createTables() {
         user_id INTEGER REFERENCES users(id),
         billing_address_id INTEGER REFERENCES billing_addresses(id)
       ); 
+      CREATE TABLE product_reviews (
+        id SERIAL PRIMARY KEY,
+        product_id INT NOT NULL,
+        user_id INT NOT NULL,
+        rating INT NOT NULL,
+        review_text TEXT,
+        review_date TIMESTAMP NOT NULL,
+        FOREIGN KEY (product_id) REFERENCES products(id),
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      );
+      CREATE TABLE order_history (
+        id SERIAL PRIMARY KEY,
+        session_id UUID NOT NULL,
+        user_id INT NOT NULL,
+        order_date TIMESTAMP NOT NULL,
+        total_amount DECIMAL(10, 2) NOT NULL,
+        billing_address_id INT NOT NULL,
+        shipping_address_id INT NOT NULL,
+        order_products JSONB[] NOT NULL DEFAULT '{}',
+        FOREIGN KEY (user_id) REFERENCES users(id),
+        FOREIGN KEY (shipping_address_id) REFERENCES shipping_addresses(id),
+        FOREIGN KEY (billing_address_id) REFERENCES billing_addresses(id)
+      ); 
   `);
     console.log("Finished creating table!");
   } catch (error) {
@@ -97,14 +122,16 @@ const bikeData = () => {
     console.log("Generating bike data...");
     const category = faker.vehicle.bicycle();
     let name = "";
-    name = name + " " + faker.vehicle.model();
-    const minPrice = faker.number.int({
+    name = name + "" + faker.vehicle.model();
+    const minPrice = faker.number.float({
         min: 500,
         max: 20000,
+        precision: 0.01
     });
-    const maxPrice = faker.number.int({
+    const maxPrice = faker.number.float({
         min: minPrice,
-        max: minPrice * 3
+        max: minPrice * 3,
+        precision: 0.01
     });
 
     return{
@@ -113,18 +140,13 @@ const bikeData = () => {
        name: name, 
        imageUrl: faker.image.urlLoremFlickr({ category: 'bicycle' }),
        description: faker.lorem.paragraph(),
-       min_price: {
-        amount: minPrice,
-        currency_code: "USD",
-       },
-       max_price: {
-        amount: maxPrice,
-        currency_code: "USD",
-       },
+       min_price: minPrice,
+       max_price: maxPrice,
        currency_code: "USD",
-       amount: faker.number.int({
-        min: 500,
-        max: 60000,
+       amount: faker.number.float({
+        min: minPrice,
+        max: maxPrice,
+        precision: 0.01
        }),
        availability: faker.datatype.boolean(),
        total_inventory: faker.number.int({ min: 1, max: 5 }),
@@ -138,7 +160,7 @@ async function fillDB(numSamples) {
 
     for (let i = 0; i < numSamples; i++) {
       const productData = bikeData();
-      await createProducts(productData);
+      await createProducts(productData, "admin");
     }
 
     console.log("Finished filling database!");
@@ -156,7 +178,6 @@ async function createInitialUsers() {
         name: 'albert',
         email: 'albert@example.com',
         password: 'bertie99',
-        role: 'customer',
         billing_addresses: [
           { street: '123 street', city: 'New York', state: 'NY', postalCode: '00345', country: 'US'}
         ],
@@ -164,7 +185,7 @@ async function createInitialUsers() {
           { street: 'Triple street', city: 'Los Angles', state: 'CA', postalCode: '70094', country: 'US'}
         ]
       },
-      { name: 'sandra', email: 'sandra@example.com', password: '2sandy4me', role: 'administrator',
+      { name: 'sandra', email: 'sandra@example.com', password: '2sandy4me', 
         billing_addresses: [
         { street: 'Bark street', city: 'Boston', state: 'MA', postalCode: '03823', country: 'US'}
         ] ,
@@ -172,7 +193,7 @@ async function createInitialUsers() {
           { street: 'Crazy street', city: 'Miami', state: 'FL', postalCode: '04975', country: 'US'}
         ]
       },
-      { name: 'glamgal', email: 'glamgal@example.com', password: 'soglam', role: 'customer',
+      { name: 'glamgal', email: 'glamgal@example.com', password: 'soglam', 
       billing_addresses: [
         { street: 'Hulk street', city: 'Atlanta', state: 'GA', postalCode: '38746', country: 'US'}
       ],
@@ -223,12 +244,98 @@ async function createInitialUsers() {
   }
 }
 
+async function fillProductReviews(numReviews) {
+  try {
+    console.log("Starting to fill product reviews...");
+
+    const products = await getAllProducts();
+    const users = await getAllUsers();
+
+    const reviewsToCreate = [];
+    for (let i = 0; i < numReviews; i++) {
+      const randomProduct = products[Math.floor(Math.random() * products.length)];
+      const randomUser = users[Math.floor(Math.random() * users.length)];
+      const rating = Math.floor(Math.random() * 5) + 1; 
+      const reviewText = faker.lorem.paragraph();
+      const reviewDate = faker.date.past();
+
+      reviewsToCreate.push({
+        productId: randomProduct.id,
+        userId: randomUser.id,
+        rating: rating,
+        reviewText: reviewText,
+        reviewDate: reviewDate,
+      });
+    }
+
+    const createdReviews = await Promise.all(reviewsToCreate.map(createReview));
+
+    console.log("Product reviews created:");
+    console.log(createdReviews);
+    console.log("Finished filling product reviews!");
+  } catch (error) {
+    console.error("Error filling product reviews!");
+    throw error;
+  }
+}
+
+async function fillOrderHistory(numOrders) {
+  try {
+    console.log("Starting to fill order history...");
+
+    const users = await getAllUsers();
+    const products = await getAllProducts();
+
+
+    for (let i = 0; i < numOrders; i++) {
+      const randomUser = await getUserById(Math.ceil(Math.random() * users.length));
+      const randomProducts = [];
+      for(let j = 0; j < Math.floor(Math.random() * products.length); j++){
+        randomProducts.push(products[Math.floor(Math.random() * products.length)])
+      }
+      const orderProducts = randomProducts;
+      let tempTotalAmount = 0; 
+      for(let k = 0; k < orderProducts.length; k++){
+        const productAmount = parseFloat(orderProducts[k].amount); 
+        tempTotalAmount += productAmount;
+      }
+      const totalAmount = tempTotalAmount;
+      const sessionID = faker.string.uuid(); 
+      const orderDate = faker.date.past();
+      const billingAddressID = randomUser.billing_addresses[0].id; 
+      const shippingAddressID = randomUser.shipping_addresses[0].id; 
+      
+
+      const order = await createOrderInDatabase({
+        sessionID,
+        userID: randomUser.id,
+        orderDate,
+        totalAmount, 
+        billingAddressID,
+        shippingAddressID,
+        orderProducts
+      });
+
+      console.log(`Order ${i + 1} created:`, order);
+    }
+
+    console.log("Finished filling order history!");
+  } catch (error) {
+    console.error("Error filling order history!");
+    throw error;
+  }
+}
+
+
+
 async function rebuildDB() {
   try {
       await dropTables();
       await createTables();
       await fillDB(10);
       await createInitialUsers();
+      await fillProductReviews(10);
+      await fillOrderHistory(5);
   }   catch(error) {
       console.log("Error during rebuildDB")
       throw error;
@@ -239,9 +346,9 @@ async function testDB() {
   try {
     console.log("Starting to test database...");
 
-    // console.log("Calling getAllProducts");
-    // const products = await getAllProducts();
-    // console.log("Result:", products);
+    console.log("Calling getAllProducts");
+    const products = await getAllProducts();
+    console.log("Result:", products);
 
     console.log("Calling getAllUsers");
     const users = await getAllUsers();
@@ -250,6 +357,19 @@ async function testDB() {
     console.log("Calling getUserById with 1");
     const albert = await getUserById(1);
     console.log("Result:", albert);
+
+    console.log("Calling getAllReviews");
+    const reviews = await getAllReviews();
+    console.log("Result", reviews);
+
+    console.log("Calling getReviewsByProduct with 1");
+    const productReview = await getReviewsByProduct(1);
+    console.log("Result:", productReview);
+
+    console.log("Calling getOrderByUserId with 1");
+    const order = await getOrderByUserId(1);
+    console.log("Result:", order);
+
 
     console.log("Finished database tests!");
   } catch (error) {

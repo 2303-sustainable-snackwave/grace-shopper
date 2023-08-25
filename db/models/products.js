@@ -1,6 +1,6 @@
-const client = require("./client");
+const client = require("../client");
 
-// Updates
+// Updated
 
 async function createProducts({
     category,
@@ -19,9 +19,6 @@ async function createProducts({
     if (requestingUserRole !== "admin") {
       throw new Error("Only admin users can create products.");
     }
-    if (requestingUserRole !== "admin") {
-      throw new Error("Only admin users can create products.");
-    }
     const {
       rows: [products],
     } = await client.query(
@@ -35,7 +32,7 @@ async function createProducts({
         currency_code,
         amount,
         availability,
-        total_inventory, )
+        total_inventory )
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
             RETURNING *;
             `,
@@ -53,7 +50,6 @@ async function createProducts({
     );
     return products;
   } catch (error) {
-    throw new Error('Could not create product: ' + error.message);
     throw new Error('Could not create product: ' + error.message);
   }
 }
@@ -76,7 +72,6 @@ async function getProductById(id) {
     return rows[0];
   } catch (error) {
     throw new Error('Could not locate product: ' + error.message);
-    throw new Error('Could not locate product: ' + error.message);
   }
 }
 
@@ -95,7 +90,6 @@ async function getProductsWithoutOrders() {
 
     return rows;
   } catch (error) {
-    throw new Error('Could not locate products: ' + error.message);
     throw new Error('Could not locate products: ' + error.message);
   }
 }
@@ -170,7 +164,6 @@ async function updateProduct(productId, updatedFields, requestingUserRole) {
     return updatedProduct;
   } catch (error) {
     throw new Error('Could not update product: ' + error.message);
-    throw new Error('Could not update product: ' + error.message);
   }
 }
 
@@ -180,17 +173,9 @@ async function destroyProduct(id, requestingUserRole) {
       throw new Error("Only admin users can delete products.");
     }
     const deletedProduct = await getProductById(id);
-async function destroyProduct(id, requestingUserRole) {
-  try {
-    if (requestingUserRole !== "admin") {
-      throw new Error("Only admin users can delete products.");
-    }
-    const deletedProduct = await getProductById(id);
 
       if (!deletedProduct) {
-      if (!deletedProduct) {
             return null;
-      }
       }
 
       // await client.query(
@@ -208,25 +193,11 @@ async function destroyProduct(id, requestingUserRole) {
         `,
         [id]
       );
-      const { rowCount } = await client.query(
-        `
-        DELETE FROM products
-        WHERE id = $1
-        `,
-        [id]
-      );
 
       if (rowCount === 0) {
         return null;
       }
-      if (rowCount === 0) {
-        return null;
-      }
 
-    return deletedProduct;
-  } catch (error) {
-    throw new Error('Could not delete product: ' + error.message);
-  }
     return deletedProduct;
   } catch (error) {
     throw new Error('Could not delete product: ' + error.message);

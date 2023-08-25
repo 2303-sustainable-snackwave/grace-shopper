@@ -6,12 +6,10 @@ const { addShippingAddressToUser, getShippingAddressByUserId } = require('./ship
 // database functions
 
 // user functions
-async function createUser({ name, email, password }) {
+async function createUser({ name, email, password,
+  billingAddressList, shippingAddressList }) {
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Start a transaction
-    await client.query('BEGIN');
 
     // Start a transaction
     await client.query('BEGIN');
@@ -22,7 +20,6 @@ async function createUser({ name, email, password }) {
       VALUES ($1, $2, $3, $4)
       RETURNING *;
       `,
-      [name, email, hashedPassword, 'user']
       [name, email, hashedPassword, 'user']
     );
 
@@ -39,13 +36,8 @@ async function createUser({ name, email, password }) {
     // Commit the transaction
     await client.query('COMMIT');
 
-    // Commit the transaction
-    await client.query('COMMIT');
-
     return user;
   } catch (error) {
-    // Rollback the transaction on error
-    await client.query('ROLLBACK');
     // Rollback the transaction on error
     await client.query('ROLLBACK');
     throw new Error('Could not create user: ' + error.message);
@@ -209,6 +201,7 @@ async function updateUser(userId, updatedFields, requestingUserRole) {
 
     return updatedUser;
   } catch (error) {
+    throw new Error('Could not update user: ' + error.message);
     throw new Error('Could not update user: ' + error.message);
   }
 }

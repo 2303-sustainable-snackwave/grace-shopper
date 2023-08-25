@@ -25,7 +25,6 @@ async function createUser({
       RETURNING *;
       `,
       [name, email, hashedPassword, 'user']
-      [name, email, hashedPassword, 'user']
     );
 
     delete user.password;
@@ -207,7 +206,6 @@ async function updateUser(userId, updatedFields, requestingUserRole) {
     return updatedUser;
   } catch (error) {
     throw new Error('Could not update user: ' + error.message);
-    throw new Error('Could not update user: ' + error.message);
   }
 }
 
@@ -217,10 +215,51 @@ async function deleteUser(userId, requestingUserRole) {
       throw new Error('Only admin users can delete users.');
     }
 
+    const billingAddressesResult = await client.query(
+      `
+      SELECT id
+      FROM billing_addresses
+      WHERE user_id = $1
+      `,
+      [userId]
+    );
+
+    if (billingAddressesResult.rows.length > 0) {
+      for (const billingAddress of billingAddressesResult.rows) {
+        await client.query(
+          `
+          DELETE FROM billing_addresses
+          WHERE id = $1
+          `,
+          [billingAddress.id]
+        );
+      }
+    }
+
+    const shippingAddressesResult = await client.query(
+      `
+      SELECT id
+      FROM shipping_addresses
+      WHERE user_id = $1
+      `,
+      [userId]
+    );
+
+    if (shippingAddressesResult.rows.length > 0) {
+      for (const shippingAddress of shippingAddressesResult.rows) {
+        await client.query(
+          `
+          DELETE FROM shipping_addresses
+          WHERE id = $1
+          `,
+          [shippingAddress.id]
+        );
+      }
+    }
+
     const result = await client.query(
       `
-      UPDATE users
-      SET role = 'deleted'
+      DELETE FROM users
       WHERE id = $1
       `,
       [userId]

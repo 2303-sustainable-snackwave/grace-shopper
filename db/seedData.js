@@ -83,7 +83,7 @@ async function createTables() {
       CREATE TABLE user_shipping_addresses (
         id SERIAL PRIMARY KEY,
         user_id INTEGER REFERENCES users(id),
-        billing_address_id INTEGER REFERENCES billing_addresses(id)
+        shipping_address_id INTEGER REFERENCES shipping_addresses(id)
       ); 
   `);
     console.log("Finished creating table!");

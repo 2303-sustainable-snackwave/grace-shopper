@@ -39,31 +39,42 @@ const createFakeUserWithToken = async (email) => {
 };
 
 const createFakeBikeProduct = async (overrides = {}) => {
+  const minPrice = 500; // Define your minimum price
+  const maxPrice = 1000; // Define your maximum price
+
   const fakeBikeData = {
-    category: 'Bikes',
-    brand: faker.company.companyName(),
+    category: faker.vehicle.bicycle(),
+    brand: faker.company.name(),
     name: `Bike - ${faker.commerce.productName()}`,
-    imageUrl: faker.image.imageUrl(),
-    description: `A ${faker.lorem.word()} bike for outdoor adventures.`,
-    min_price: faker.random.number({ min: 200, max: 500 }),
-    max_price: faker.random.number({ min: 501, max: 1000 }),
+    imageUrl: faker.image.urlLoremFlickr({ category: 'bicycle' }),
+    description: faker.lorem.paragraph(),
+    min_price: {
+      amount: minPrice,
+      currency_code: "USD",
+    },
+    max_price: {
+      amount: maxPrice,
+      currency_code: "USD",
+    },
     currency_code: 'USD',
-    amount: faker.random.number({ min: 10, max: 30 }),
-    availability: true,
-    total_inventory: faker.random.number({ min: 5, max: 20 }),
+    amount: faker.finance.amount({
+      min: 500,
+      max: 60000,
+      dec: 0 
+    }),
+    availability: faker.datatype.boolean(),
+    total_inventory: faker.number.int({ min: 0, max: 20 }),
   };
-  const bikeProduct = await createProducts({ ...fakeBikeData, ...overrides }, adminUser.role);
+
+  const bikeProduct = await createProducts({ ...fakeBikeData, ...overrides }, "admin");
   if (!bikeProduct) {
     throw new Error("createProducts didn't return a bike product");
   }
   return { ...bikeProduct, ...overrides };
 };
 
-
 module.exports = {
     createFakeUser,
-    createFakeUserWithToken,
-    createFakeBikeProduct
     createFakeUserWithToken,
     createFakeBikeProduct
 }

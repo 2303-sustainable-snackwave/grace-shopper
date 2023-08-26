@@ -7,6 +7,7 @@ if (typeof TextEncoder === 'undefined') {
     global.TextEncoder = require('util').TextEncoder;
 }
 require("dotenv").config();
+const client = require("../../db/client");
 const { faker } = require('@faker-js/faker');
 const {
   createBillingAddress,
@@ -20,7 +21,7 @@ const {
   updateUserBillingAddress,
   updateUserShippingAddress,
 } = require("../../db/models");
-const { createFakeUser } = require("../helpers");
+const { createFakeUser, createFakeShippingAddress, createFakeBillingAddress } = require("../helpers");
 
 describe("Billing and Shipping Address Functions", () => {
   let testUserId;
@@ -28,6 +29,7 @@ describe("Billing and Shipping Address Functions", () => {
   beforeAll(async () => {
     const fakeUser = await createFakeUser({ role: 'user' });
     testUserId = fakeUser.id;
+    console.log("fakeUser:", fakeUser);
   });
 
   describe("createBillingAddress", () => {
@@ -114,6 +116,7 @@ describe("Billing and Shipping Address Functions", () => {
 
   describe("addShippingAddressToUser", () => {
     it("should add shipping addresses to user", async () => {
+      
       const fakeShippingAddressList = [
         {
           street: "987 Maple St",
@@ -142,38 +145,144 @@ describe("Billing and Shipping Address Functions", () => {
     });
   });
 
- 
-  describe("deleteBillingAddress", () => {
-    it("should delete a user's billing address", async () => {
-      const billingAddress = await createBillingAddress(
+  describe('updateUserBillingAddress', () => {
+    it("should update a user's billing address", async () => {
+      
+      const fakeBillingAddress = await createFakeBillingAddress(testUserId);
+    
+      await addBillingAddressToUser(testUserId, [fakeBillingAddress]);
+    
+      const updatedBillingAddress = await updateUserBillingAddress(
         testUserId,
-        "123 Main St",
-        "Cityville",
-        "State",
-        "12345",
-        "Country"
+        fakeBillingAddress.id,
+        {
+          street: '456 Oak St',
+          city: 'Cityville',
+          state: 'New State',
+          postalCode: '12345',
+          country: 'Country',
+        }
       );
-
-      const isDeleted = await deleteBillingAddress(testUserId, billingAddress.id);
-
-      expect(isDeleted).toBe(true);
+  
+  
+      expect(updatedBillingAddress).toBeDefined();
+      expect(updatedBillingAddress.street).toBe('456 Oak St');
+      expect(updatedBillingAddress.city).toBe('Cityville');
+  
+      const retrievedBillingAddresses = await getBillingAddressByUserId(testUserId);
+  
+      expect(retrievedBillingAddresses.length).toBe(1);
+      expect(retrievedBillingAddresses[0].street).toBe('456 Oak St');
+      expect(retrievedBillingAddresses[0].city).toBe('Cityville');
     });
   });
 
-  describe("deleteShippingAddress", () => {
+  describe('updateUserShippingAddress', () => {
+    it("should update a user's shipping address", async () => {
+      
+      const fakeShippingAddress = await createFakeShippingAddress(testUserId);
+    
+      await addShippingAddressToUser(testUserId, [fakeShippingAddress]);
+    
+      const updatedShippingAddress = await updateUserShippingAddress(
+        testUserId,
+        fakeShippingAddress.id,
+        {
+          street: '456 Oak St',
+          city: 'Cityville',
+          state: 'New State',
+          postalCode: '12345',
+          country: 'Country',
+        }
+      );
+  
+      expect(updatedShippingAddress).toBeDefined();
+      expect(updatedShippingAddress.street).toBe('456 Oak St');
+      expect(updatedShippingAddress.city).toBe('Cityville');
+  
+      const retrievedShippingAddresses = await getShippingAddressByUserId(testUserId);
+  
+      expect(retrievedShippingAddresses.length).toBe(1);
+      expect(retrievedShippingAddresses[0].street).toBe('456 Oak St');
+      expect(retrievedShippingAddresses[0].city).toBe('Cityville');
+    });
+  });
+
+  describe('deleteBillingAddress', () => {
+    it('should delete a user\'s billing address', async () => {
+      const fakeBillingAddress = await createFakeBillingAddress(testUserId);
+      await addBillingAddressToUser(testUserId, [fakeBillingAddress]);
+      const result = await deleteBillingAddress(testUserId, fakeBillingAddress.id);
+      expect(result).toBe(true);
+  
+      const addressQuery = await client.query(
+        `SELECT * FROM billing_addresses WHERE id = $1`,
+        [fakeBillingAddress.id]
+      );
+      const userBillingQuery = await client.query(
+        `SELECT * FROM user_billing_addresses WHERE id = $1`,
+        [fakeBillingAddress.id]
+      );
+  
+      expect(addressQuery.rows.length).toBe(0);
+      expect(userBillingQuery.rows.length).toBe(0);
+    });
+  
+    it('should throw an error when trying to delete a non-existent address', async () => {
+      const userId = 1; 
+      const addressId = 999; 
+  
+      await expect(deleteBillingAddress(userId, addressId)).rejects.toThrow();
+    });
+  
+    it('should throw an error when user doesn\'t have permission to delete the address', async () => {
+      const userId = 2; 
+      const addressId = 1; 
+  
+      await expect(deleteBillingAddress(userId, addressId)).rejects.toThrow();
+    });
+  });
+
+  describe('deleteShippingAddress', () => {
     it("should delete a user's shipping address", async () => {
-      const shippingAddress = await createShippingAddress(
-        testUserId,
-        "789 Oak St",
-        "Villageville",
-        "State",
-        "98765",
-        "Country"
+      const fakeShippingAddress = await createFakeShippingAddress(testUserId);
+      console.log("fakeShippingAddress:", fakeShippingAddress);
+
+      await addShippingAddressToUser(testUserId, [fakeShippingAddress]);
+
+      const result = await deleteShippingAddress(testUserId, fakeShippingAddress.id);
+      console.log("Deletion result:", result);
+  
+      const addressQuery = await client.query(
+        `SELECT * FROM shipping_addresses WHERE id = $1`,
+        [fakeShippingAddress.id]
       );
+      console.log("Address query result:", addressQuery.rows);
+  
+      const userShippingQuery = await client.query(
+        `SELECT * FROM user_shipping_addresses WHERE id = $1`,
+        [fakeShippingAddress.id]
+      );
+      console.log("User shipping query result:", userShippingQuery.rows);
+  
+      expect(result).toBe(true);
+      expect(addressQuery.rows.length).toBe(0);
+      expect(userShippingQuery.rows.length).toBe(0);
+    });
 
-      const isDeleted = await deleteShippingAddress(testUserId, shippingAddress.id);
-
-      expect(isDeleted).toBe(true);
+    it('should throw an error when trying to delete a non-existent address', async () => {
+      const userId = 1; 
+      const addressId = 999; 
+  
+      await expect(deleteShippingAddress(userId, addressId)).rejects.toThrow();
+    });
+  
+    it('should throw an error when user doesn\'t have permission to delete the address', async () => {
+      const userId = 2; 
+      const addressId = 1; 
+  
+      await expect(deleteShippingAddress(userId, addressId)).rejects.toThrow();
     });
   });
+
 });

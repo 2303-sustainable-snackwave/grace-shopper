@@ -18,17 +18,11 @@ async function createBillingAddress(userId, street, city, state, postalCode, cou
 }
 
 async function addBillingAddressToUser(userId, billingAddressList) {
-  try {
+  try {    
     const createdBillingAddresses = [];
     for (const billingAddress of billingAddressList) {
-      const createdAddress = await createBillingAddress(
-        userId,
-        billingAddress.street,
-        billingAddress.city,
-        billingAddress.state,
-        billingAddress.postalCode,
-        billingAddress.country
-      );
+
+      const createdAddress = billingAddress;
 
       await client.query(
         `

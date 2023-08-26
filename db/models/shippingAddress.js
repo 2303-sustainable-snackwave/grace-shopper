@@ -18,17 +18,11 @@ async function createShippingAddress(userId, street, city, state, postalCode, co
 }
 
 async function addShippingAddressToUser(userId, shippingAddressList) {
-  try {
+  try {    
     const createdShippingAddresses = [];
     for (const shippingAddress of shippingAddressList) {
-      const createdAddress = await createShippingAddress(
-        userId,
-        shippingAddress.street,
-        shippingAddress.city,
-        shippingAddress.state,
-        shippingAddress.postalCode,
-        shippingAddress.country
-      );
+
+      const createdAddress = shippingAddress;
 
       await client.query(
         `
@@ -67,11 +61,12 @@ async function updateUserShippingAddress(userId, addressId, updatedAddressData) 
   try {
     const { street, city, state, postalCode, country } = updatedAddressData;
 
-    const query = `
+    const query = 
+    `
       UPDATE shipping_addresses
       SET street = $1, city = $2, state = $3, postal_code = $4, country = $5
-      FROM user_shipping_addresses uba
-      WHERE uba.user_id = $6 AND uba.shipping_address_id = $7
+      FROM user_shipping_addresses usa
+      WHERE usa.user_id = $6 AND usa.shipping_address_id = $7
       RETURNING *
     `;
 

@@ -108,6 +108,7 @@ const createFakeShippingAddress = async (userId, overrides = {}) => {
     postalCode: faker.location.zipCode(),
     country: faker.location.country()
   };
+  
   const shippingAddress = await createShippingAddress(
     userId,
     fakeShippingAddressData.street,

@@ -7,7 +7,7 @@ const {
     createUser,
     getUser,
     getUserById,
-    getUserByUsername,
+    getUserByName,
     getUserByEmail
 } = require('../db/models/users')
 /* 
@@ -22,13 +22,13 @@ const {
 // POST /api/users/register
 
 router.post('/register', async (req, res, next) => {
-    const { username, password }= req.body;
+    const { name, email, password, role }= req.body;
     try {
-        const userExists = await getUserByUsername(username);
+        const userExists = await getUserByName(name);
         if (userExists) {
             return res.status(409).json({
                 error: 'Username already exists.',
-                message: `User ${username} is already taken.`,
+                message: `User ${name} is already taken.`,
                 name: 'UserExistsError'
             });
         }
@@ -39,11 +39,11 @@ router.post('/register', async (req, res, next) => {
                 name: 'UserPasswordError'
             });
         }
-        const newUser = await createUser({ username, password });
+        const newUser = await createUser({ name, email, password, role })
       const token = jwt.sign(
         {
           id: newUser.id,
-          username: newUser.username,
+          name: newUser.name,
         },
         process.env.JWT_SECRET,
         {
@@ -55,24 +55,26 @@ router.post('/register', async (req, res, next) => {
         token,
         user: {
           id: newUser.id,
-          username: newUser.username,
+          name: newUser.name,
         },
       });
-    } catch ({ name, message }) {
-        next({
-            name: "UserRegistrationError",
-            message: "There was an error registering user",
-          });
-    }
+    } catch (error) {
+      console.error("Registration error:", error);
+      next({
+          name: "UserRegistrationError",
+          message: "There was an error registering user",
+      });
+   }
+   
 });
 
 // POST /api/users/login
 
 router.post('/login', async (req, res, next) => {
-    const { username, password } = req.body;
+    const { name, password } = req.body;
     try {
         // Are we using the email for login purposes? Because I can change the the async await here!
-        const user = await getUserByUsername(username);
+        const user = await getUserByUsername(name);
         if (!user) {
             return next ({
                 error: "User not found",
@@ -91,7 +93,7 @@ router.post('/login', async (req, res, next) => {
         const token = jwt.sign(
             {
                 id: user.id,
-                username: user.username,
+                name: user.name,
               },
               process.env.JWT_SECRET,
               {
@@ -103,7 +105,7 @@ router.post('/login', async (req, res, next) => {
             token,
             user: {
               id: user.id,
-              username: user.username,
+              name: user.name,
             },
           });
 
@@ -162,16 +164,16 @@ router.get("/:username/checkout", async (req, res, next) => {
       if (!decodedToken || !decodedToken.id) {
         return res.status(401).json({ error: "Invalid token" });
       }
-      const username = req.params.username;
-      const user = await getUserByUsername(username);
+      const name = req.params.name;
+      const user = await getUserByUsername(name);
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
-      if (decodedToken.username === username) {
-        const allRoutines = await getAllCheckoutByUser({ username });
+      if (decodedToken.name === name) {
+        const allRoutines = await getAllCheckoutByUser({ name });
         return res.json(allRoutines);
       } else {
-        const publicRoutines = await getPublicCheckoutByUser({ username });
+        const publicRoutines = await getPublicCheckoutByUser({ name });
         return res.json(publicRoutines);
       }
     } catch (error) {

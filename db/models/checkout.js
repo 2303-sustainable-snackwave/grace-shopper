@@ -1,5 +1,5 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const client = require('./client');
+const client = require('../client');
 
 async function createCheckoutSession({ lineItems, successUrl, cancelUrl }) {
     try {

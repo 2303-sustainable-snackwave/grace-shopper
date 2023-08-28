@@ -1,22 +1,16 @@
 const bcrypt = require('bcrypt');
 const client = require("../client");
-const { addBillingAddressToUser, getBillingAddressByUserId } = require('./billingAddress');
-const { addShippingAddressToUser, getShippingAddressByUserId } = require('./shippingAddress');
 
 // database functions
 
 // user functions
-async function createUser({
-  name,
-  email,
-  password,
-  addresses: { billingAddressList, shippingAddressList },
-}) {
+async function createUser({ name, email, password, role }) {
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Start a transaction
     await client.query('BEGIN');
+    console.log('Data:', {name, email, hashedPassword, role});
 
     const { rows: [user] } = await client.query(
       `
@@ -24,8 +18,7 @@ async function createUser({
       VALUES ($1, $2, $3, $4)
       RETURNING *;
       `,
-      [name, email, hashedPassword, 'user']
-      [name, email, hashedPassword, 'user']
+      [name, email, hashedPassword, role]
     );
 
     delete user.password;

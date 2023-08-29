@@ -6,6 +6,7 @@ const {createShippingAddress} = require('./models/shippingAddress');
 const {createReview, getAllReviews, getReviewsByProduct} = require('./models/reviews');
 const {createOrderInDatabase} = require('./models/checkout');
 const {getOrderByUserId} = require('./models/orders');
+const {createCart, getCartByUserId, addItemToCart, getCartById, getCartItemsByCartId} = require('./models/cart');
 
 const client = require('./client');
 
@@ -21,6 +22,8 @@ async function dropTables() {
       DROP TABLE IF EXISTS products CASCADE;
       DROP TABLE IF EXISTS product_reviews CASCADE;
       DROP TABLE IF EXISTS order_history CASCADE;
+      DROP TABLE IF EXISTS carts CASCADE;
+      DROP TABLE IF EXISTS cart_items CASCADE;
       DROP TABLE IF EXISTS users CASCADE;
     `);
 
@@ -110,6 +113,25 @@ async function createTables() {
         FOREIGN KEY (shipping_address_id) REFERENCES shipping_addresses(id),
         FOREIGN KEY (billing_address_id) REFERENCES billing_addresses(id)
       ); 
+      CREATE TABLE carts (
+        id SERIAL PRIMARY KEY,
+        user_id INT,
+        guest_id UUID,
+        FOREIGN KEY (user_id) REFERENCES users(id),
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+      CREATE TABLE cart_items (
+        id SERIAL PRIMARY KEY,
+        user_id INT,
+        cart_id INT,
+        product_id INT,
+        quantity INT,
+        FOREIGN KEY (cart_id) REFERENCES carts(id) ON DELETE CASCADE,
+        FOREIGN KEY (product_id) REFERENCES products(id),
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
   `);
     console.log("Finished creating table!");
   } catch (error) {
@@ -244,6 +266,66 @@ async function createInitialUsers() {
   }
 }
 
+async function fillCarts(numCarts){
+  try{
+    console.log("Starting to fill carts... ");
+
+    const cartsToCreate = [];
+    for(let i = 0; i < numCarts; i++){
+      const userID = i+1;
+      const guestID = faker.string.uuid();
+
+      cartsToCreate.push({
+        userId: userID,
+        guestId: guestID
+      })
+    }
+
+    const createdCarts = await Promise.all(cartsToCreate.map(createCart));
+
+    console.log("Carts created: ");
+    console.log(createdCarts);
+    console.log("Finished filling carts!");
+  } catch (error) {
+    console.error("Error filling carts!");
+    throw error;
+  }
+}
+
+async function fillCartProducts(numProducts){
+  try{
+    console.log("Starting to fill cart products... ");
+
+    const products = await getAllProducts();
+    const users = await getAllUsers();
+
+    const cartProductsToCreate = [];
+    for(let i = 0; i < numProducts; i++){
+      const randomProduct = products[Math.floor(Math.random() * products.length)];
+      const randomUser = users[Math.floor(Math.random() * users.length)];
+      const randomCart = await getCartByUserId(randomUser.id);
+      const quantity = faker.number.int({max:randomProduct.total_inventory})
+
+      cartProductsToCreate.push({
+        userId: randomUser.id,
+        cartId: randomCart.id,
+        productId: randomProduct.id,
+        quantity: quantity
+      });
+      
+
+      const createdCartProducts = await Promise.all(cartProductsToCreate.map(addItemToCart));
+
+      console.log("Cart product added:");
+      console.log(createdCartProducts);
+      console.log("Finished adding product to cart!");
+    }
+  } catch (error) {
+    console.error("Error adding product to cart!");
+    throw error;
+  }
+}
+
 async function fillProductReviews(numReviews) {
   try {
     console.log("Starting to fill product reviews...");
@@ -336,6 +418,8 @@ async function rebuildDB() {
       await createInitialUsers();
       await fillProductReviews(10);
       await fillOrderHistory(5);
+      await fillCarts(3);
+      await fillCartProducts(5);
   }   catch(error) {
       console.log("Error during rebuildDB")
       throw error;
@@ -346,30 +430,37 @@ async function testDB() {
   try {
     console.log("Starting to test database...");
 
-    console.log("Calling getAllProducts");
-    const products = await getAllProducts();
-    console.log("Result:", products);
+    // console.log("Calling getAllProducts");
+    // const products = await getAllProducts();
+    // console.log("Result:", products);
 
-    console.log("Calling getAllUsers");
-    const users = await getAllUsers();
-    console.log("Result:", users);
+    // console.log("Calling getAllUsers");
+    // const users = await getAllUsers();
+    // console.log("Result:", users);
 
-    console.log("Calling getUserById with 1");
-    const albert = await getUserById(1);
-    console.log("Result:", albert);
+    // console.log("Calling getUserById with 1");
+    // const albert = await getUserById(1);
+    // console.log("Result:", albert);
 
-    console.log("Calling getAllReviews");
-    const reviews = await getAllReviews();
-    console.log("Result", reviews);
+    // console.log("Calling getAllReviews");
+    // const reviews = await getAllReviews();
+    // console.log("Result", reviews);
 
-    console.log("Calling getReviewsByProduct with 1");
-    const productReview = await getReviewsByProduct(1);
-    console.log("Result:", productReview);
+    // console.log("Calling getReviewsByProduct with 1");
+    // const productReview = await getReviewsByProduct(1);
+    // console.log("Result:", productReview);
 
-    console.log("Calling getOrderByUserId with 1");
-    const order = await getOrderByUserId(1);
-    console.log("Result:", order);
+    // console.log("Calling getOrderByUserId with 1");
+    // const order = await getOrderByUserId(1);
+    // console.log("Result:", order);
 
+    console.log("Calling getCartById with 1");
+    const cart = await getCartById(1);
+    console.log("Result:",cart);
+
+    console.log("Calling getCartItemsByCartId with 1");
+    const cartItems = await getCartItemsByCartId(1);
+    console.log("Result:",cartItems);
 
     console.log("Finished database tests!");
   } catch (error) {

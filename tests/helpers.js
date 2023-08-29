@@ -1,9 +1,11 @@
 const { faker } = require('@faker-js/faker');
+const { v4: uuidv4 } = require('uuid');
 const { 
   createUser, 
   createProducts,
   createBillingAddress,
   createShippingAddress,
+  createCart
 } = require("../db/models");
 const jwt = require("jsonwebtoken");
 const JWT_SECRET = process.env.JWT_SECRET
@@ -115,10 +117,33 @@ const createFakeShippingAddress = async (userId, overrides = {}) => {
   return { ...shippingAddress, ...overrides };
 };
 
+const createFakeCart = async (overrides = {}) => {
+  const fakeCartData = {
+    user_id: overrides.user_id || null,
+    guest_id: uuidv4(),
+    created_at: faker.date.past(),
+    updated_at: faker.date.recent(),
+    ...overrides,
+  };
+
+  const cart = await createCart(
+    fakeCartData.user_id,
+    fakeCartData.guest_id,
+    fakeCartData.created_at,
+    fakeCartData.updated_at,
+  );
+
+  if (!cart) {
+    throw new Error("createCart didn't return a cart");
+  }
+  return { ...cart, ...overrides };
+};
+
 module.exports = {
     createFakeUser,
     createFakeUserWithToken,
     createFakeBikeProduct,
     createFakeShippingAddress,
-    createFakeBillingAddress
+    createFakeBillingAddress,
+    createFakeCart
 }

@@ -87,29 +87,6 @@ async function createTables() {
         user_id INTEGER REFERENCES users(id),
         shipping_address_id INTEGER REFERENCES shipping_addresses(id)
       ); 
-      CREATE TABLE product_reviews (
-        id SERIAL PRIMARY KEY,
-        product_id INT NOT NULL,
-        user_id INT NOT NULL,
-        rating INT NOT NULL,
-        review_text TEXT,
-        review_date TIMESTAMP NOT NULL,
-        FOREIGN KEY (product_id) REFERENCES products(id),
-        FOREIGN KEY (user_id) REFERENCES users(id)
-      );
-      CREATE TABLE order_history (
-        id SERIAL PRIMARY KEY,
-        session_id UUID NOT NULL,
-        user_id INT NOT NULL,
-        order_date TIMESTAMP NOT NULL,
-        total_amount DECIMAL(10, 2) NOT NULL,
-        billing_address_id INT NOT NULL,
-        shipping_address_id INT NOT NULL,
-        order_products JSONB[] NOT NULL DEFAULT '{}',
-        FOREIGN KEY (user_id) REFERENCES users(id),
-        FOREIGN KEY (shipping_address_id) REFERENCES shipping_addresses(id),
-        FOREIGN KEY (billing_address_id) REFERENCES billing_addresses(id)
-      ); 
   `);
     console.log("Finished creating table!");
   } catch (error) {

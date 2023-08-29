@@ -1,5 +1,10 @@
 const { faker } = require('@faker-js/faker');
-const { createUser, createProducts } = require("../db/models");
+const { 
+  createUser, 
+  createProducts,
+  createBillingAddress,
+  createShippingAddress,
+} = require("../db/models");
 const jwt = require("jsonwebtoken");
 const JWT_SECRET = process.env.JWT_SECRET
 // This contains helper functions which create fake entries in the database
@@ -11,10 +16,8 @@ const createFakeUser = async (overrides = {}) => {
     email: faker.internet.email(),
     password: faker.internet.password(),
     role: "user",
-    addresses: {
-      billingAddressList: [],
-      shippingAddressList: []
-    }
+    billingAddressList: [],
+    shippingAddressList: []
   };
   const user = await createUser({ ...fakeUserData, ...overrides });
   if (!user) {
@@ -48,14 +51,8 @@ const createFakeBikeProduct = async (overrides = {}) => {
     name: `Bike - ${faker.commerce.productName()}`,
     imageUrl: faker.image.urlLoremFlickr({ category: 'bicycle' }),
     description: faker.lorem.paragraph(),
-    min_price: {
-      amount: minPrice,
-      currency_code: "USD",
-    },
-    max_price: {
-      amount: maxPrice,
-      currency_code: "USD",
-    },
+    min_price: minPrice,
+    max_price: maxPrice,
     currency_code: 'USD',
     amount: faker.finance.amount({
       min: 500,
@@ -73,8 +70,55 @@ const createFakeBikeProduct = async (overrides = {}) => {
   return { ...bikeProduct, ...overrides };
 };
 
+const createFakeBillingAddress = async (userId, overrides = {}) => {
+  const fakeBillingAddressData = {
+    street: faker.location.streetAddress(),
+    city: faker.location.city(),
+    state: faker.location.state(),
+    postalCode: faker.location.zipCode(),
+    country: faker.location.country()
+  };
+  const billingAddress = await createBillingAddress(
+    userId,
+    fakeBillingAddressData.street,
+    fakeBillingAddressData.city,
+    fakeBillingAddressData.state,
+    fakeBillingAddressData.postalCode,
+    fakeBillingAddressData.country
+  );
+  if (!billingAddress) {
+    throw new Error("createBillingAddress didn't return a billing address");
+  }
+  return { ...billingAddress, ...overrides };
+};
+
+const createFakeShippingAddress = async (userId, overrides = {}) => {
+  const fakeShippingAddressData = {
+    street: faker.location.streetAddress(),
+    city: faker.location.city(),
+    state: faker.location.state(),
+    postalCode: faker.location.zipCode(),
+    country: faker.location.country()
+  };
+  
+  const shippingAddress = await createShippingAddress(
+    userId,
+    fakeShippingAddressData.street,
+    fakeShippingAddressData.city,
+    fakeShippingAddressData.state,
+    fakeShippingAddressData.postalCode,
+    fakeShippingAddressData.country
+  );
+  if (!shippingAddress) {
+    throw new Error("createShippingAddress didn't return a shipping address");
+  }
+  return { ...shippingAddress, ...overrides };
+};
+
 module.exports = {
     createFakeUser,
     createFakeUserWithToken,
-    createFakeBikeProduct
+    createFakeBikeProduct,
+    createFakeShippingAddress,
+    createFakeBillingAddress
 }

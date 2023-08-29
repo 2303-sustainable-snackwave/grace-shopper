@@ -150,7 +150,7 @@ describe('Product Database Functions', () => {
             expect(retrievedProduct).toBeNull();
         });
     
-        // xit('removes the product from associated orders', async () => {
+        // it('removes the product from associated orders', async () => {
             
         //     const adminUser = await createFakeUser({ role: 'admin' });
     

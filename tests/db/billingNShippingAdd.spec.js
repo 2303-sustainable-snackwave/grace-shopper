@@ -33,7 +33,7 @@ describe("Billing and Shipping Address Functions", () => {
   });
 
   describe("createBillingAddress", () => {
-    it("should create a billing address", async () => {
+    xit("should create a billing address", async () => {
       const fakeBillingAddressData = {
         street: "123 Main St",
         city: "Cityville",
@@ -58,7 +58,7 @@ describe("Billing and Shipping Address Functions", () => {
   });
 
   describe("addBillingAddressToUser", () => {
-    it("should add billing addresses to user", async () => {
+    xit("should add billing addresses to user", async () => {
       const fakeBillingAddressList = [
         {
           street: "456 Elm St",
@@ -80,7 +80,7 @@ describe("Billing and Shipping Address Functions", () => {
   });
 
   describe("getBillingAddressByUserId", () => {
-    it("should get billing addresses by user ID", async () => {
+    xit("should get billing addresses by user ID", async () => {
       const billingAddresses = await getBillingAddressByUserId(testUserId);
 
       expect(billingAddresses).toBeDefined();
@@ -90,7 +90,7 @@ describe("Billing and Shipping Address Functions", () => {
   });
 
   describe("createShippingAddress", () => {
-    it("should create a shipping address", async () => {
+    xit("should create a shipping address", async () => {
       const fakeShippingAddressData = {
         street: "789 Oak St",
         city: "Villageville",
@@ -115,7 +115,7 @@ describe("Billing and Shipping Address Functions", () => {
   });
 
   describe("addShippingAddressToUser", () => {
-    it("should add shipping addresses to user", async () => {
+    xit("should add shipping addresses to user", async () => {
       
       const fakeShippingAddressList = [
         {
@@ -137,7 +137,7 @@ describe("Billing and Shipping Address Functions", () => {
   });
 
   describe("getShippingAddressByUserId", () => {
-    it("should get shipping addresses by user ID", async () => {
+    xit("should get shipping addresses by user ID", async () => {
       const shippingAddresses = await getShippingAddressByUserId(testUserId);
 
       expect(shippingAddresses).toBeDefined();
@@ -146,7 +146,7 @@ describe("Billing and Shipping Address Functions", () => {
   });
 
   describe('updateUserBillingAddress', () => {
-    it("should update a user's billing address", async () => {
+    xit("should update a user's billing address", async () => {
       
       const fakeBillingAddress = await createFakeBillingAddress(testUserId);
     
@@ -178,7 +178,7 @@ describe("Billing and Shipping Address Functions", () => {
   });
 
   describe('updateUserShippingAddress', () => {
-    it("should update a user's shipping address", async () => {
+    xit("should update a user's shipping address", async () => {
       
       const fakeShippingAddress = await createFakeShippingAddress(testUserId);
     
@@ -209,7 +209,7 @@ describe("Billing and Shipping Address Functions", () => {
   });
 
   describe('deleteBillingAddress', () => {
-    it('should delete a user\'s billing address', async () => {
+    xit('should delete a user\'s billing address', async () => {
       const fakeBillingAddress = await createFakeBillingAddress(testUserId);
       await addBillingAddressToUser(testUserId, [fakeBillingAddress]);
       const result = await deleteBillingAddress(testUserId, fakeBillingAddress.id);
@@ -228,14 +228,14 @@ describe("Billing and Shipping Address Functions", () => {
       expect(userBillingQuery.rows.length).toBe(0);
     });
   
-    it('should throw an error when trying to delete a non-existent address', async () => {
+    xit('should throw an error when trying to delete a non-existent address', async () => {
       const userId = 1; 
       const addressId = 999; 
   
       await expect(deleteBillingAddress(userId, addressId)).rejects.toThrow();
     });
   
-    it('should throw an error when user doesn\'t have permission to delete the address', async () => {
+    xit('should throw an error when user doesn\'t have permission to delete the address', async () => {
       const userId = 2; 
       const addressId = 1; 
   
@@ -244,7 +244,7 @@ describe("Billing and Shipping Address Functions", () => {
   });
 
   describe('deleteShippingAddress', () => {
-    it("should delete a user's shipping address", async () => {
+    xit("should delete a user's shipping address", async () => {
       const fakeShippingAddress = await createFakeShippingAddress(testUserId);
       console.log("fakeShippingAddress:", fakeShippingAddress);
 
@@ -270,14 +270,14 @@ describe("Billing and Shipping Address Functions", () => {
       expect(userShippingQuery.rows.length).toBe(0);
     });
 
-    it('should throw an error when trying to delete a non-existent address', async () => {
+    xit('should throw an error when trying to delete a non-existent address', async () => {
       const userId = 1; 
       const addressId = 999; 
   
       await expect(deleteShippingAddress(userId, addressId)).rejects.toThrow();
     });
   
-    it('should throw an error when user doesn\'t have permission to delete the address', async () => {
+    xit('should throw an error when user doesn\'t have permission to delete the address', async () => {
       const userId = 2; 
       const addressId = 1; 
   

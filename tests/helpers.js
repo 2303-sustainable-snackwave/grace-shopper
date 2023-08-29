@@ -16,10 +16,8 @@ const createFakeUser = async (overrides = {}) => {
     email: faker.internet.email(),
     password: faker.internet.password(),
     role: "user",
-    addresses: {
-      billingAddressList: [],
-      shippingAddressList: []
-    }
+    billingAddressList: [],
+    shippingAddressList: []
   };
   const user = await createUser({ ...fakeUserData, ...overrides });
   if (!user) {
@@ -53,14 +51,8 @@ const createFakeBikeProduct = async (overrides = {}) => {
     name: `Bike - ${faker.commerce.productName()}`,
     imageUrl: faker.image.urlLoremFlickr({ category: 'bicycle' }),
     description: faker.lorem.paragraph(),
-    min_price: {
-      amount: minPrice,
-      currency_code: "USD",
-    },
-    max_price: {
-      amount: maxPrice,
-      currency_code: "USD",
-    },
+    min_price: minPrice,
+    max_price: maxPrice,
     currency_code: 'USD',
     amount: faker.finance.amount({
       min: 500,

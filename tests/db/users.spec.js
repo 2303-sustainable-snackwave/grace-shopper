@@ -242,13 +242,13 @@ describe('User Database Functions', () => {
     xit('deletes a user if requester is admin', async () => {
       const adminUser = await createFakeUser({ role: 'admin' });
       const userToDelete = await createFakeUser();
-  
+    
       const result = await deleteUser(userToDelete.id, adminUser.role);
-  
+    
       expect(result).toBe(true);
-  
+    
       const deletedUser = await getUserById(userToDelete.id);
-      expect(deletedUser.role).toBe('deleted');
+      expect(deletedUser).toBeNull();
     });
   
     xit('throws an error if requester is not an admin', async () => {

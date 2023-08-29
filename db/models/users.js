@@ -93,13 +93,16 @@ async function getUserById(userId) {
       `,
       [userId]
     );
-    user.billing_addresses = await getBillingAddressByUserId(userId);
-    user.shipping_addresses = await getShippingAddressByUserId(userId);
-  
+
     if (!user) {
       return null;
     }
+
+    user.billing_addresses = await getBillingAddressByUserId(userId);
+    user.shipping_addresses = await getShippingAddressByUserId(userId);
+
     delete user.password;
+
     return user;
   } catch (error) {
     throw new Error('Could not get user: ' + error.message);
@@ -145,7 +148,9 @@ async function getUserByEmail(email) {
     if (!user) {
       return null;
     }
+
     delete user.password;
+    
     return user;
   } catch (error) {
     throw new Error('Could not locate user email: ' + error.message);
@@ -270,6 +275,7 @@ async function deleteUser(userId, requestingUserRole) {
     throw new Error('Could not delete user: ' + error.message);
   }
 }
+
 
 module.exports = {
   createUser,

@@ -158,6 +158,7 @@ const createFakeCart = async (userId, guestId, productId, overrides = {}) => {
   }
 
   return { cart_id: cartId, cart_item_id: cartItemId, ...fakeCartData };
+};
 
 const createFakeReviews = async (productId, userId, numberOfReviews = 5) => {
   const reviews = [];
@@ -181,6 +182,7 @@ const createFakeReviews = async (productId, userId, numberOfReviews = 5) => {
 
   return reviews;
 };
+
 
 module.exports = {
     createFakeUser,

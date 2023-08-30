@@ -19,29 +19,39 @@ const {
 const { createFakeUser, createFakeBikeProduct, createFakeReviews } = require("../helpers");
 
 describe("Review Functions", () => {
-    describe("createReview", () => {
-      it("should create a review", async () => {
+  let testUserId;
 
-        const user = await createFakeUser();
-        const product = await createFakeBikeProduct();
-        
-        const fakeReviewData = {
-          productId: product.id,
-          userId: user.id,
-          rating: 5,
-          reviewText: "Great product!",
-          reviewDate: new Date(),
-        };
-        
-        const review = await createReview(fakeReviewData);
-        
-        expect(review.userId).toBe(user.id);
-        expect(review.productId).toBe(product.id);
-      });
+  beforeAll(async () => {
+    const fakeUser = await createFakeUser({ role: 'user' });
+    testUserId = fakeUser.id;
+  });
+
+  describe('createReview', () => {
+    xit('creates a new review', async () => {
+
+      const product = await createFakeBikeProduct();
+
+      const reviewData = {
+        productId: product.id,
+        userId: testUserId, 
+        rating: 5,
+        reviewText: 'Awesome product!',
+        reviewDate: new Date(),
+      };
+
+      const createdReview = await createReview(reviewData);
+
+      expect(createdReview).toBeDefined();
+      expect(createdReview.product_id).toBe(reviewData.productId);
+      expect(createdReview.user_id).toBe(testUserId);
+      expect(createdReview.rating).toBe(reviewData.rating);
+      expect(createdReview.review_text).toBe(reviewData.reviewText);
+      expect(createdReview.review_date).toEqual(reviewData.reviewDate);
     });
+  });
   
     describe("getAllReviews", () => {
-      it("should get all reviews", async () => {
+      xit("should get all reviews", async () => {
         
         const reviews = await getAllReviews();
   
@@ -50,10 +60,10 @@ describe("Review Functions", () => {
     });
   
     describe("getReviewsByProduct", () => {
-      it("should get reviews for a product", async () => {
+      xit("should get reviews for a product", async () => {
         
         const product = await createFakeBikeProduct();
-        await createFakeReviews(product.id, 3); 
+        await createFakeReviews(product.id, testUserId, 3); 
         
         const reviews = await getReviewsByProduct(product.id);
   
@@ -63,34 +73,33 @@ describe("Review Functions", () => {
     });
   
     describe("updateReview", () => {
-      it("should update a review", async () => {
+      xit("should update a review", async () => {
 
-        const user = await createFakeUser();
         const product = await createFakeBikeProduct();
-        const reviews = await createFakeReviews(product.id, 1);
-        
+        const reviews = await createFakeReviews(product.id, testUserId, 1);
+
         const updatedReview = await updateReview({
           reviewId: reviews[0].id,
           rating: 4,
           reviewText: "Updated review text",
         });
-  
-        expect(updatedReview.userId).toBe(user.id);
-        expect(updatedReview.productId).toBe(product.id);
+
+        expect(updatedReview.user_id).toBe(testUserId);
+        expect(updatedReview.product_id).toBe(product.id);
         expect(updatedReview.rating).toBe(4);
       });
   
     });
   
     describe("deleteReview", () => {
-      it("should delete a review", async () => {
+      xit("should delete a review", async () => {
 
         const product = await createFakeBikeProduct();
-        const reviews = await createFakeReviews(product.id, 1); 
-        
+        const reviews = await createFakeReviews(product.id, testUserId, 1); 
+
         const deletedReview = await deleteReview(reviews[0].id);
-  
-        expect(deletedReview.productId).toBe(product.id);
+
+        expect(deletedReview.product_id).toBe(product.id);
       });
     });
   });

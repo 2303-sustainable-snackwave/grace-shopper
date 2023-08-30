@@ -2,7 +2,7 @@ const client = require("../client");
 
 
 // This function creates a new cart for a logged-in user or a guest user.
-async function createCart(userId, guestId) {
+async function createCart({userId, guestId}) {
   try {
     const query = `
       INSERT INTO carts (user_id, guest_id)
@@ -18,7 +18,7 @@ async function createCart(userId, guestId) {
 }
 
 // This function adds a product item to the cart
-async function addItemToCart(userId, cartId, productId, quantity) {
+async function addItemToCart({userId, cartId, productId, quantity}) {
   try {
 
     const cart = await getCartById(cartId);
@@ -27,11 +27,11 @@ async function addItemToCart(userId, cartId, productId, quantity) {
     }
 
     const query = `
-      INSERT INTO cart_items (cart_id, product_id, quantity)
-      VALUES ($1, $2, $3)
+      INSERT INTO cart_items (user_id, cart_id, product_id, quantity)
+      VALUES ($1, $2, $3, $4)
       RETURNING id;
     `;
-    const values = [cartId, productId, quantity];
+    const values = [userId, cartId, productId, quantity];
     const result = await client.query(query, values);
     return result.rows[0].id;
   } catch (error) {
@@ -81,6 +81,21 @@ async function removeItemFromCart(userId, cartItemId) {
     return true;
   } catch (error) {
     throw new Error('Could not remove item from cart: ' + error.message);
+  }
+}
+
+async function getCartByUserId(userId) {
+  try {
+    const query = `
+      SELECT *
+      FROM carts
+      WHERE user_id = $1;
+    `;
+    const values = [userId];
+    const result = await client.query(query, values);
+    return result.rows[0];
+  } catch (error) {
+    throw new Error('Could not get cart items: ' + error.message);
   }
 }
 
@@ -148,6 +163,7 @@ module.exports = {
     addItemToCart,
     updateCartItemQuantity,
     removeItemFromCart,
+    getCartByUserId,
     getCartItemsByCartId,
     getCartById,
     getCartItemById

@@ -20,28 +20,43 @@ async function createCart(userId, guestId) {
 // This function adds a product item to the cart
 async function addItemToCart(userId, cartId, productId, quantity) {
   try {
-
     const cart = await getCartById(cartId);
+
     if (cart.user_id !== userId) {
       throw new Error('You do not have permission to update this cart.');
     }
 
     const query = `
-      INSERT INTO cart_items (cart_id, product_id, quantity)
-      VALUES ($1, $2, $3)
+      INSERT INTO cart_items (user_id, cart_id, product_id, quantity)
+      VALUES ($1, $2, $3, $4)
       RETURNING id;
     `;
-    const values = [cartId, productId, quantity];
+    const values = [userId, cartId, productId, quantity];
     const result = await client.query(query, values);
+
+    if (result.rows.length === 0) {
+      throw new Error("Item could not be added to cart");
+    }
+
     return result.rows[0].id;
   } catch (error) {
-    throw new Error('Could not add item to cart: ' + error.message);
+    throw new Error("Could not add item to cart: " + error.message);
   }
 }
 
 // This function updates the quantity of a product item in the cart.
 async function updateCartItemQuantity(userId, cartItemId, newQuantity) {
   try {
+    // Validate input parameters
+    if (typeof newQuantity !== 'number' || newQuantity < 0) {
+      throw new Error('Invalid quantity value');
+    }
+
+    if (newQuantity === 0) {
+      // If new quantity is 0, remove the cart item using the existing function
+      await removeItemFromCart(userId, cartItemId);
+      return null; // Indicate that the cart item was removed
+    }
 
     const cartItem = await getCartItemById(cartItemId);
     const cart = await getCartById(cartItem.cart_id);
@@ -52,11 +67,18 @@ async function updateCartItemQuantity(userId, cartItemId, newQuantity) {
     const query = `
       UPDATE cart_items
       SET quantity = $1
-      WHERE id = $2;
+      WHERE id = $2
+      RETURNING *;
     `;
     const values = [newQuantity, cartItemId];
-    await client.query(query, values);
-    return true;
+    const result = await client.query(query, values);
+
+    if (result.rows.length === 0) {
+      throw new Error("Could not update cart item quantity");
+    }
+
+    const updatedCartItem = result.rows[0];
+    return updatedCartItem;
   } catch (error) {
     throw new Error('Could not update cart item quantity: ' + error.message);
   }
@@ -65,8 +87,12 @@ async function updateCartItemQuantity(userId, cartItemId, newQuantity) {
 // This function removes a product item from the cart.
 async function removeItemFromCart(userId, cartItemId) {
   try {
-
     const cartItem = await getCartItemById(cartItemId);
+
+    if (cartItem === null) {
+      throw new Error('Cart item not found.');
+    }
+
     const cart = await getCartById(cartItem.cart_id);
     if (cart.user_id !== userId) {
       throw new Error('You do not have permission to remove this cart item.');
@@ -93,9 +119,14 @@ async function getCartItemsByCartId(cartId) {
     `;
     const values = [cartId];
     const result = await client.query(query, values);
+
+    if (result.rows.length === 0) {
+      throw new Error('Could not get cart items: No cart items found for the given cart ID');
+    }
+
     return result.rows;
   } catch (error) {
-    throw new Error('Could not get cart items: ' + error.message);
+    throw new Error('Could not get cart items: Invalid cart ID');
   }
 }
 
@@ -114,7 +145,7 @@ async function getCartById(cartId) {
     const result = await client.query(query, values);
 
     if (result.rows.length === 0) {
-      throw new Error('Cart not found.');
+      throw new Error('Cart not found');
     }
 
     return result.rows[0];
@@ -132,9 +163,9 @@ async function getCartItemById(cartItemId) {
     `;
     const values = [cartItemId];
     const result = await client.query(query, values);
-
+    
     if (result.rows.length === 0) {
-      throw new Error('Cart item not found.');
+      throw new Error('Cart not found');
     }
 
     return result.rows[0];

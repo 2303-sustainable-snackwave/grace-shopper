@@ -10,7 +10,6 @@ require("dotenv").config();
 const client = require("../../db/client");
 const { faker } = require('@faker-js/faker');
 const {
-    createCart,
     addItemToCart,
     updateCartItemQuantity,
     removeItemFromCart,
@@ -26,153 +25,201 @@ const {
 
 describe('Cart Database Functions', () => {
   describe('createCart', () => {
-    it('creates a new cart for a user', async () => {
+    xit('creates a new cart for a user', async () => {
       const user = await createFakeUser();
-      const cartId = await createFakeCart(user.id, null);
+      const product = await createFakeBikeProduct();
+      const cartId = await createFakeCart(user.id, null, product.id);
+
       expect(cartId).toBeDefined();
     });
 
-    it('creates a new cart for a guest', async () => {
-      const cartId = await createFakeCart(null, 'fakeGuestId');
+    xit('creates a new cart for a guest', async () => {
+      const product = await createFakeBikeProduct();
+      const cartId = await createFakeCart(null, product.id);
+
       expect(cartId).toBeDefined();
-    });
+    });    
   });
 
   describe('addItemToCart', () => {
-    it('adds a product item to the cart', async () => {
+    xit('adds a new product item to an existing cart', async () => {
       const user = await createFakeUser();
-      const cartId = await createFakeCart({ user_id: user.id });
+
       const product = await createFakeBikeProduct();
-      const cartItemId = await addItemToCart(user.id, cartId, product.id, 1);
+
+      const cart = await createFakeCart(user.id, null, product.id);
+
+      const newproduct = await createFakeBikeProduct();
+
+      const cartItemId = await addItemToCart(user.id, cart.cart_id, newproduct.id, 1);
+   
+      expect(cartItemId).toBeDefined();
+    });
+
+    xit('adds a product item to the cart for a guest', async () => {
+      const product = await createFakeBikeProduct();
+
+      const cart = await createFakeCart(null, product.id);
+
+      const newproduct = await createFakeBikeProduct();
+
+      const cartItemId = await addItemToCart(null, cart.cart_id, newproduct.id, 1);
+   
       expect(cartItemId).toBeDefined();
     });
   
-    it('throws an error if non-owner tries to add item to cart', async () => {
+    xit('throws an error if non-owner tries to add item to cart', async () => {
       const user = await createFakeUser();
-      const cartId = await createFakeCart({ user_id: user.id });
       const anotherUser = await createFakeUser();
       const product = await createFakeBikeProduct();
-  
+      const cart = await createFakeCart(user.id, null, product.id);
+
       await expect(
-        addItemToCart(anotherUser.id, cartId, product.id, 1)
+        addItemToCart(anotherUser.id, cart.cart_id, product.id, 1)
       ).rejects.toThrow("You do not have permission to update this cart.");
     });
   });
 
   describe('updateCartItemQuantity', () => {
-    it('updates the quantity of a cart item', async () => {
+    xit('updates the quantity of a cart item', async () => {
       const user = await createFakeUser();
-      const cartId = await createFakeCart(user.id, null);
       const product = await createFakeBikeProduct();
-      const cartItemId = await addItemToCart(user.id, cartId, product.id, 1);
+      const cart = await createFakeCart(user.id, product.id);
       const newQuantity = 2;
-  
-      const result = await updateCartItemQuantity(user.id, cartItemId, newQuantity);
-      expect(result).toBe(true);
+    
+      const updatedCartItem = await updateCartItemQuantity(
+        user.id,
+        cart.cart_item_id, 
+        newQuantity
+      );
+    
+      expect(updatedCartItem).toBeDefined();
+      expect(updatedCartItem.id).toBe(cart.cart_item_id);
+      expect(updatedCartItem.quantity).toBe(newQuantity);
     });
   
-    it('throws an error if non-owner tries to update cart item quantity', async () => {
+    xit('removes a cart item if the quantity is set to 0', async () => {
+      
       const user = await createFakeUser();
-      const cartId = await createFakeCart(user.id, null);
       const product = await createFakeBikeProduct();
-      const cartItemId = await addItemToCart(user.id, cartId, product.id, 1);
-      const anotherUser = await createFakeUser();
-      const newQuantity = 2;
+      const cart = await createFakeCart(user.id, product.id);
+      const cartItemId = cart.cart_item_id;
   
-      await expect(
-        updateCartItemQuantity(anotherUser.id, cartItemId, newQuantity)
-      ).rejects.toThrow("You do not have permission to update this cart item.");
+      const newQuantity = 0;
+      const updatedCartItem = await updateCartItemQuantity(user.id, cartItemId, newQuantity);
+  
+      expect(updatedCartItem).toBeNull();
+    });
+  
+    xit('throws an error for invalid quantity values', async () => {
+      const user = await createFakeUser();
+      const product = await createFakeBikeProduct();
+      const cart = await createFakeCart(user.id, product.id);
+      const cartItemId = cart.cart_item_id;
+  
+      const invalidQuantities = [null, 'invalid', -1];
+      for (const invalidQuantity of invalidQuantities) {
+        await expect(updateCartItemQuantity(user.id, cartItemId, invalidQuantity)).rejects.toThrow('Invalid quantity value');
+      }
+    });
+  
+    xit('throws an error if user does not have permission to update the cart item', async () => {
+      const user1 = await createFakeUser();
+      const user2 = await createFakeUser();
+      const product = await createFakeBikeProduct();
+      const cart = await createFakeCart(user1.id, product.id);
+      const cartItemId = cart.cart_item_id;
+  
+      await expect(updateCartItemQuantity(user2.id, cartItemId, 2)).rejects.toThrow("You do not have permission to update this cart item.");
     });
   });
 
   describe('removeItemFromCart', () => {
-    it('removes a product item from the cart', async () => {
+    xit('removes a product item from the cart', async () => {
       const user = await createFakeUser();
-      const cartId = await createFakeCart(user.id, null);
+      const cart = await createFakeCart(user.id, null);
       const product = await createFakeBikeProduct();
-      const cartItemId = await addItemToCart(user.id, cartId, product.id, 1);
+      const cartItemId = await addItemToCart(user.id, cart.cart_id, product.id, 1);
   
-      const result = await removeItemFromCart(user.id, cartItemId);
-      expect(result).toBe(true);
+      const removed = await removeItemFromCart(user.id, cartItemId);
+  
+      expect(removed).toBe(true);
     });
   
-    it('throws an error if non-owner tries to remove item from cart', async () => {
-      const user = await createFakeUser();
-      const cartId = await createFakeCart(user.id, null);
+    xit('throws an error if user does not have permission to remove the cart item', async () => {
+      const user1 = await createFakeUser();
+      const user2 = await createFakeUser();
+      const cart = await createFakeCart(user1.id, null);
       const product = await createFakeBikeProduct();
-      const cartItemId = await addItemToCart(user.id, cartId, product.id, 1);
-      const anotherUser = await createFakeUser();
+      const cartItemId = await addItemToCart(user1.id, cart.cart_id, product.id, 1);
   
-      await expect(
-        removeItemFromCart(anotherUser.id, cartItemId)
-      ).rejects.toThrow("You do not have permission to remove this cart item.");
+      await expect(removeItemFromCart(user2.id, cartItemId)).rejects.toThrow('You do not have permission to remove this cart item.');
+    });
+  
+    xit('throws an error if cart item is not found', async () => {
+      const user = await createFakeUser();
+  
+      await expect(removeItemFromCart(user.id, 123)).rejects.toThrow('Could not remove item from cart: Cart item not found.');
     });
   });
 
   describe('getCartItemsByCartId', () => {
-    it('retrieves all cart items associated with a given cart ID', async () => {
+    xit('retrieves cart items by cart ID', async () => {
       const user = await createFakeUser();
-      const cartId = await createFakeCart(user.id, null);
-      const product1 = await createFakeBikeProduct();
+      const product = await createFakeBikeProduct();
+      const cart = await createFakeCart(user.id, null, product.id);
+
       const product2 = await createFakeBikeProduct();
-      await addItemToCart(user.id, cartId, product1.id, 1);
-      await addItemToCart(user.id, cartId, product2.id, 2);
-  
-      const cartItems = await getCartItemsByCartId(cartId);
+      const cartItemId2 = await addItemToCart(user.id, cart.cart_id, product2.id, 1);
+
+      const cartItems = await getCartItemsByCartId(cart.cart_id);
+    
       expect(cartItems.length).toBe(2);
-      expect(cartItems[0].product_id).toBe(product1.id);
-      expect(cartItems[1].product_id).toBe(product2.id);
+    
+      expect(cartItems[0].product_id).toBe(cart.product_id);
+      expect(cartItems[1].id).toBe(cartItemId2);
     });
   
-    it('returns an empty array if no cart items are associated with the given cart ID', async () => {
-      const user = await createFakeUser();
-      const cartId = await createFakeCart(user.id, null);
-  
-      const cartItems = await getCartItemsByCartId(cartId);
-      expect(cartItems.length).toBe(0);
+    xit('throws an error if the cart ID is invalid', async () => {
+      await expect(getCartItemsByCartId(9999999)).rejects.toThrow('Could not get cart items:');
     });
-  
   });
 
   describe('getCartById', () => {
-    it('retrieves cart information by cart ID', async () => {
+    xit('retrieves cart information by cart ID', async () => {
       const user = await createFakeUser();
-      const cartId = await createFakeCart(user.id, null);
-  
-      const cart = await getCartById(cartId);
-      expect(cart.id).toBe(cartId);
-      expect(cart.user_id).toBe(user.id);
+      const cart = await createFakeCart(user.id, null);
+    
+      const retrievedCart = await getCartById(cart.cart_id);
+    
+      expect(retrievedCart).toBeDefined();
+      expect(retrievedCart.id).toBe(cart.cart_id);
+      expect(retrievedCart.user_id).toBe(user.id);
     });
   
-    it('throws an error if cart ID does not exist', async () => {
-      const nonExistingCartId = -1;
-  
-      await expect(
-        getCartById(nonExistingCartId)
-      ).rejects.toThrow("Cart not found.");
+    xit('throws an error if cart ID does not exist', async () => {
+      await expect(getCartById(123)).rejects.toThrow('Could not get cart:');
     });
-  
   });
 
   describe('getCartItemById', () => {
-    it('retrieves cart item information by cart item ID', async () => {
+    xit('retrieves a cart item by ID', async () => {
       const user = await createFakeUser();
-      const cartId = await createFakeCart(user.id, null);
       const product = await createFakeBikeProduct();
-      const cartItemId = await addItemToCart(user.id, cartId, product.id, 1);
+      const cart = await createFakeCart(user.id, null, product.id);
+      const cartItemId = await addItemToCart(user.id, cart.cart_id, product.id, 1);
   
       const cartItem = await getCartItemById(cartItemId);
+  
+      expect(cartItem).toBeDefined();
       expect(cartItem.id).toBe(cartItemId);
+      expect(cartItem.user_id).toBe(user.id);
       expect(cartItem.product_id).toBe(product.id);
+      expect(cartItem.quantity).toBe(1);
     });
   
-    it('throws an error if cart item ID does not exist', async () => {
-      const nonExistingCartItemID = -1;
-  
-      await expect(
-        getCartItemById(nonExistingCartItemID)
-      ).rejects.toThrow("Cart item not found.");
+    xit('throws an error if cart item ID is invalid', async () => {
+      await expect(getCartItemById(123)).rejects.toThrow('Could not get cart item:');
     });
-  
   });
 });

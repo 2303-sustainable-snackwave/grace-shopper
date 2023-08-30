@@ -5,7 +5,8 @@ const {
   createProducts,
   createBillingAddress,
   createShippingAddress,
-  createCart
+  createCart,
+  addItemToCart
 } = require("../db/models");
 const jwt = require("jsonwebtoken");
 const JWT_SECRET = process.env.JWT_SECRET
@@ -44,8 +45,8 @@ const createFakeUserWithToken = async (email) => {
 };
 
 const createFakeBikeProduct = async (overrides = {}) => {
-  const minPrice = 500; // Define your minimum price
-  const maxPrice = 1000; // Define your maximum price
+  const minPrice = 500;
+  const maxPrice = 1000;
 
   const fakeBikeData = {
     category: faker.vehicle.bicycle(),
@@ -117,26 +118,44 @@ const createFakeShippingAddress = async (userId, overrides = {}) => {
   return { ...shippingAddress, ...overrides };
 };
 
-const createFakeCart = async (overrides = {}) => {
+const createFakeCart = async (userId, guestId, productId, overrides = {}) => {
   const fakeCartData = {
-    user_id: overrides.user_id || null,
-    guest_id: uuidv4(),
+    user_id: userId || null,
+    guest_id: guestId !== null ? uuidv4() : null,
     created_at: faker.date.past(),
     updated_at: faker.date.recent(),
+    product_id: productId || null,
     ...overrides,
   };
 
-  const cart = await createCart(
+  const cartId = await createCart(
     fakeCartData.user_id,
     fakeCartData.guest_id,
     fakeCartData.created_at,
     fakeCartData.updated_at,
+    fakeCartData.product_id
   );
 
-  if (!cart) {
-    throw new Error("createCart didn't return a cart");
+  if (!cartId) {
+    throw new Error("createCart didn't return a cart with an ID");
   }
-  return { ...cart, ...overrides };
+
+  // Only add a cart item if productId is not null
+  let cartItemId = null;
+  if (fakeCartData.product_id !== null) {
+    cartItemId = await addItemToCart(
+      fakeCartData.user_id,
+      cartId,
+      fakeCartData.product_id,
+      1
+    );
+
+    if (!cartItemId) {
+      throw new Error("addItemToCart didn't return a cart item with an ID");
+    }
+  }
+
+  return { cart_id: cartId, cart_item_id: cartItemId, ...fakeCartData };
 };
 
 module.exports = {

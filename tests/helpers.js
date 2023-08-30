@@ -8,7 +8,6 @@ const {
   createCart,
   addItemToCart,
   createReview
-
 } = require("../db/models");
 const jwt = require("jsonwebtoken");
 const JWT_SECRET = process.env.JWT_SECRET
@@ -142,7 +141,6 @@ const createFakeCart = async (userId, guestId, productId, overrides = {}) => {
     throw new Error("createCart didn't return a cart with an ID");
   }
 
- 
   let cartItemId = null;
   if (fakeCartData.product_id !== null) {
     cartItemId = await addItemToCart(
@@ -182,7 +180,6 @@ const createFakeReviews = async (productId, userId, numberOfReviews = 5) => {
 
   return reviews;
 };
-
 
 module.exports = {
     createFakeUser,

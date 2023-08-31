@@ -53,8 +53,51 @@ async function getReviewsByProduct(productId) {
     }
 }
 
+async function updateReview({ reviewId, rating, reviewText }) {
+    try {
+        const { rows } = await client.query(`
+        UPDATE product_reviews
+        SET rating = $1, review_text = $2
+        WHERE id = $3
+        RETURNING *;
+        `,
+            [rating, reviewText, reviewId]
+        );
+
+        if (rows.length === 0) {
+            throw new Error(`Review with id ${reviewId} not found.`);
+        }
+
+        return rows[0];
+    } catch (error) {
+        throw new Error('Could not update review: ' + error.message);
+    }
+}
+
+async function deleteReview(reviewId) {
+    try {
+        const { rows } = await client.query(`
+        DELETE FROM product_reviews
+        WHERE id = $1
+        RETURNING *;
+        `,
+            [reviewId]
+        );
+
+        if (rows.length === 0) {
+            throw new Error(`Review with id ${reviewId} not found.`);
+        }
+
+        return rows[0];
+    } catch (error) {
+        throw new Error('Could not delete review: ' + error.message);
+    }
+}
+
 module.exports = {
     createReview,
     getAllReviews,
     getReviewsByProduct,
+    updateReview,
+    deleteReview,
 };

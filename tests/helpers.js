@@ -4,6 +4,7 @@ const {
   createProducts,
   createBillingAddress,
   createShippingAddress,
+  createReview
 } = require("../db/models");
 const jwt = require("jsonwebtoken");
 const JWT_SECRET = process.env.JWT_SECRET
@@ -115,10 +116,34 @@ const createFakeShippingAddress = async (userId, overrides = {}) => {
   return { ...shippingAddress, ...overrides };
 };
 
+const createFakeReviews = async (productId, userId, numberOfReviews = 5) => {
+  const reviews = [];
+
+  for (let i = 0; i < numberOfReviews; i++) {
+    const fakeReviewData = {
+        productId,
+        userId,
+        rating: faker.number.int({ min: 1, max: 5 }),
+        reviewText: faker.lorem.paragraph(),
+        reviewDate: faker.date.past(),
+    };
+
+    const review = await createReview(fakeReviewData);
+    if (!review) {
+        throw new Error("createReview didn't return a review");
+    }
+
+    reviews.push(review);
+  }
+
+  return reviews;
+};
+
 module.exports = {
     createFakeUser,
     createFakeUserWithToken,
     createFakeBikeProduct,
     createFakeShippingAddress,
-    createFakeBillingAddress
+    createFakeBillingAddress,
+    createFakeReviews
 }

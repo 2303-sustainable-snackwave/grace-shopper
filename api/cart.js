@@ -1,6 +1,7 @@
 const express = require('express');
 const jwt = require("jsonwebtoken");
 const router = express.Router();
+const { verifyToken } = require('./authMiddleware');
 const {
     createCart,
     addItemToCart,
@@ -11,30 +12,12 @@ const {
     getCartItemById
 } = require("../db/models/cart");
 
-// Middleware to verify JWT token
-function verifyToken(req, res, next) {
-  const token = req.header('Authorization');
-  
-  // Check if token is present
-  if (token) {
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      req.user = decoded;
-    } catch (error) {
-      return res.status(400).json({ error: 'Invalid token.' });
-    }
-  }
-
-  // Allow guests to proceed without token
-  next();
-}
-
 router.use(verifyToken);
 
 // Create a new cart for a user (both guest and logged-in)
-router.post('/', verifyToken, async (req, res, next) => {
+router.post('/', async (req, res, next) => {
   try {
-    const { userId, guestId } = req.body;
+    const { userId, guestId } = req.user; 
     const cartId = await createCart(userId, guestId);
     res.json({ cartId });
   } catch (error) {
@@ -43,9 +26,9 @@ router.post('/', verifyToken, async (req, res, next) => {
 });
 
 // Add an item to the cart
-router.post('/:cartId/items', verifyToken, async (req, res, next) => {
+router.post('/:cartId/items', async (req, res, next) => {
   try {
-    const { userId, guestId } = req.body;
+    const { userId, guestId } = req.user; 
     const { cartId } = req.params;
 
     // If a userId is provided, it's a guest-to-logged-in-user transition
@@ -72,9 +55,9 @@ router.post('/:cartId/items', verifyToken, async (req, res, next) => {
 });
 
 // Update the quantity of a cart item
-router.put('/:cartId/items/:cartItemId', verifyToken, async (req, res, next) => {
+router.put('/:cartId/items/:cartItemId', async (req, res, next) => {
   try {
-    const { userId, guestId } = req.body;
+    const { userId, guestId } = req.user;
     const { cartItemId } = req.params;
     const { newQuantity } = req.body;
 
@@ -102,9 +85,9 @@ router.put('/:cartId/items/:cartItemId', verifyToken, async (req, res, next) => 
 });
 
 // Remove a cart item
-router.delete('/items/:cartItemId', verifyToken, async (req, res, next) => {
+router.delete('/items/:cartItemId', async (req, res, next) => {
   try {
-    const { userId, guestId } = req.body;
+    const { userId, guestId } = req.user;
     const { cartItemId } = req.params;
 
     const cartItem = await getCartItemById(cartItemId);
@@ -143,7 +126,7 @@ router.get('/:cartId/items', async (req, res, next) => {
 
 // Get cart information by cart ID
 router.get('/:cartId', async (req, res, next) => {
-  const { userId, guestId } = req.body;
+  const { userId, guestId } = req.user;
   const { cartId } = req.params;
 
   try {
@@ -170,7 +153,7 @@ router.get('/:cartId', async (req, res, next) => {
 
 // Get cart item information by cart item ID
 router.get('/:cartId/items/:cartItemId', async (req, res, next) => {
-  const { userId, guestId } = req.body;
+  const { userId, guestId } = req.user;
   const { cartItemId } = req.params;
 
   try {

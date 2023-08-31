@@ -3,7 +3,7 @@ const {createProducts, getAllProducts} = require('./models/products');
 const {createUser, getAllUsers, getUserById} = require('./models/users');
 const {createBillingAddress} = require('./models/billingAddress');
 const {createShippingAddress} = require('./models/shippingAddress');
-const {createReview, getAllReviews, getReviewsByProduct} = require('./models/reviews');
+const {createReview, } = require('./models/reviews');
 const {createOrderInDatabase} = require('./models/checkout');
 const {getOrderByUserId} = require('./models/orders');
 const {createCart, getCartByUserId, addItemToCart, getCartById, getCartItemsByCartId} = require('./models/cart');
@@ -39,13 +39,13 @@ async function createTables() {
     console.log("Starting to create table...");
 
     await client.query(`
-      CREATE TABLE users (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
-        email VARCHAR(255) UNIQUE NOT NULL,
-        password VARCHAR(255) NOT NULL,
-        role VARCHAR(255) NOT NULL
-      );
+    CREATE TABLE users (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      email VARCHAR(255) UNIQUE NOT NULL,
+      password VARCHAR(255) NOT NULL,
+      is_admin BOOLEAN NOT NULL
+    );
       CREATE TABLE products (
         id SERIAL PRIMARY KEY,
         category TEXT,
@@ -407,8 +407,6 @@ async function fillOrderHistory(numOrders) {
     throw error;
   }
 }
-
-
 
 async function rebuildDB() {
   try {

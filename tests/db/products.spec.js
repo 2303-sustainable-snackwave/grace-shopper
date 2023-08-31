@@ -15,18 +15,18 @@ const {
     getProductsWithoutOrders,
     getAllProducts,
     updateProduct,
-    destroyProduct
+    destroyProduct,
+    getOrderHistoryForProduct,
   } = require("../../db/models");
-const { createFakeUser, createFakeBikeProduct } = require("../helpers");
+const { createFakeBikeProduct, createFakeOrderWithProduct } = require("../helpers");
 
 describe('Product Database Functions', () => {
     describe('createProducts', () => {
-        xit('creates a bike product when called by an admin user', async () => {
+        xit('creates a bike product', async () => {
             
-            const adminUser = await createFakeUser({ role: 'admin' });
             const bikeProductData = await createFakeBikeProduct();
           
-            const createdBikeProduct = await createProducts(bikeProductData, adminUser.role);
+            const createdBikeProduct = await createProducts(bikeProductData);
           
             expect(createdBikeProduct).toBeDefined();
             expect(createdBikeProduct.category).toBe(bikeProductData.category);
@@ -38,13 +38,6 @@ describe('Product Database Functions', () => {
             expect(createdBikeProduct.amount).toBe(bikeProductData.amount);
             expect(createdBikeProduct.availability).toBe(bikeProductData.availability);
             expect(createdBikeProduct.total_inventory).toBe(bikeProductData.total_inventory);
-        });
-
-        xit('throws an error if a non-admin user tries to create a product', async () => {
-            const nonAdminUser = await createFakeUser({ role: 'user' });
-            const bikeProductData = await createFakeBikeProduct();
-
-            await expect(createProducts(bikeProductData, nonAdminUser)).rejects.toThrow('Only admin users can create products.');
         });
     });
 
@@ -64,8 +57,7 @@ describe('Product Database Functions', () => {
     describe('getProductById', () => {
         xit('retrieves a product with the given ID', async () => {
 
-            const adminUser = await createFakeUser({ role: 'admin' });
-            const fakeBikeProduct = await createFakeBikeProduct(adminUser);
+            const fakeBikeProduct = await createFakeBikeProduct();
 
             const retrievedProduct = await getProductById(fakeBikeProduct.id);
 
@@ -81,67 +73,67 @@ describe('Product Database Functions', () => {
     });
 
     describe('updateProduct', () => {
-        xit('only an "admin" can update products', async () => {
+        it('returns the updated product', async () => {
             
             const fakeBikeProduct = await createFakeBikeProduct();
-
-            await expect(
-                updateProduct(
-                  fakeBikeProduct.id, 
-                  { description: 'super extra bike shocks'},
-                  'user'
-                  )
-            ).rejects.toThrow('Only admin users can update products.');
-        });
-
-        xit('returns the updated product', async () => {
+        
+            const updatedProductData = {
+              productId: fakeBikeProduct.id,
+              updatedFields: {
+                name: 'New Name',
+              },
+            }; 
             
-            const adminUser = await createFakeUser({ role: 'admin' });
-            const fakeBikeProduct = await createFakeBikeProduct();
-
-            const updatedProduct = await updateProduct(fakeBikeProduct.id, { name: 'New Name' }, adminUser.role);
-
+            const updatedProduct = await updateProduct(updatedProductData);
+        
             expect(updatedProduct).toBeDefined();
-            expect(updatedProduct.id).toBe(fakeBikeProduct.id);
-            expect(updatedProduct.name).toBe('New Name');
-        });
+            expect(updatedProduct.id).toBe(fakeBikeProduct.id); 
+            expect(updatedProduct.name).toBe(updatedProductData.updatedFields.name); 
+          });
 
-        xit('does not update fields that are not passed in', async () => {
+        it('does not update fields that are not passed in', async () => {
             
-            const adminUser = await createFakeUser({ role: 'admin' });
             const fakeBikeProduct = await createFakeBikeProduct();
 
-            const updatedProduct = await updateProduct(fakeBikeProduct.id, { name: 'New Name' }, adminUser.role);
+            const updatedProductData = {
+                productId: fakeBikeProduct.id,
+                updatedFields: {
+                  name: 'New Name',
+                },
+              }; 
+              
+              const updatedProduct = await updateProduct(updatedProductData);
 
             expect(updatedProduct).toBeDefined();
             expect(updatedProduct.id).toBe(fakeBikeProduct.id);
             expect(updatedProduct.category).toBe(fakeBikeProduct.category);
         });
 
-        xit('throws an error if product ID does not exist', async () => {
-            
-            const adminUser = await createFakeUser({ role: 'admin' });
-
-            await expect(
-                updateProduct(-1, { name: 'New Name' }, adminUser.role)
-            ).rejects.toThrow('Could not update product: Product with ID -1 not found.');
+        it('throws an error if product ID does not exist', async () => {
+            const nonExistingProductId = 9999;
+        
+            const updatedFields = {
+              name: 'New Name',
+              description: 'New Description',
+              // ...other properties
+            };
+        
+            expect.assertions(1);
+        
+            try {
+              await updateProduct({ productId: nonExistingProductId, updatedFields });
+            } catch (error) {
+              expect(error.message).toMatch(`Product with ID ${nonExistingProductId} not found.`);
+            }
         });
     });
 
     describe('destroyProduct', () => {
-        xit('throws an error if a non-admin user tries to delete a product', async () => {
+        it('removes product from database, and returns it', async () => {
             
-            const user = await createFakeUser({ role: 'user' });
-    
-            await expect(destroyProduct(1, user.role)).rejects.toThrow("Only admin users can delete products.");
-        });
-    
-        xit('removes product from database, and returns it', async () => {
-            
-            const adminUser = await createFakeUser({ role: 'admin' });
             const bikeProduct = await createFakeBikeProduct();
 
-            const deletedProduct = await destroyProduct(bikeProduct.id, adminUser.role);
+            const deletedProduct = await destroyProduct(bikeProduct.id);
 
             expect(deletedProduct).toBeDefined();
             expect(deletedProduct.id).toBe(bikeProduct.id);
@@ -150,18 +142,26 @@ describe('Product Database Functions', () => {
             expect(retrievedProduct).toBeNull();
         });
     
-        // it('removes the product from associated orders', async () => {
-            
-        //     const adminUser = await createFakeUser({ role: 'admin' });
-    
-        //     const bikeProduct = await createFakeBikeProduct(adminUser);
-    
-        //     const fakeOrder = await createFakeOrder([bikeProduct]);
-    
-        //     await destroyProduct(bikeProduct.id, adminUser.role);
-    
-        //     const ordersWithoutProduct = await getProductsWithoutOrders();
-        //     expect(ordersWithoutProduct).toContainEqual(fakeOrder);
-        // });
+        it('removes the product from associated orders', async () => {
+            // Create a fake product and associated orders
+            const fakeProduct = await createFakeBikeProduct();
+            const fakeOrder1 = await createFakeOrderWithProduct(fakeProduct.id);
+            const fakeOrder2 = await createFakeOrderWithProduct(fakeProduct.id);
+            console.log("fake order data", fakeOrder1);
+        
+            // Delete the product
+            const deletedProduct = await destroyProduct(fakeProduct.id);
+        
+            // Expect the deleted product to be defined
+            expect(deletedProduct).toBeDefined();
+        
+            // Fetch the orders to verify that the product is removed
+            const ordersAfterDeletion = await getOrderHistoryForProduct(fakeProduct.id);
+        
+            // Expect that no orders contain the deleted product ID
+            ordersAfterDeletion.forEach(order => {
+              expect(order.order_products).not.toContain(fakeProduct.id);
+            });
+          });
     });
 });

@@ -1,17 +1,52 @@
-const apiRouter = require('express').Router();
+require("dotenv").config();
+const express = require("express");
+const router = express.Router();
+const jwt = require("jsonwebtoken");
 
-apiRouter.get('/', (req, res, next) => {
-  res.send({
-    message: 'API is under construction!',
-  });
+// ROUTER: /api
+router.get("/", async (req, res, next) => {
+  try {
+    res.send({
+      message: "API is under construction!",
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
-apiRouter.get('/health', (req, res, next) => {
-  res.send({
-    healthy: true,
-  });
+// GET /api/health
+router.get("/health", async (req, res, next) => {
+  try {
+    res.send({
+      message: "Server is healthy!",
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
-// place your routers here
+// ROUTER: /api/users
+const usersRouter = require("./users");
+router.use("/users", usersRouter);
 
-module.exports = apiRouter;
+// ROUTER: /api/reviews
+const reviewsRouter = require("./reviews");
+router.use("/reviews", reviewsRouter);
+
+// ROUTER: /api/products
+const productsRouter = require("./products");
+router.use("/products", productsRouter);
+
+// ROUTER: /api/orders
+const ordersRouter = require("./orders");
+router.use("/orders", ordersRouter);
+
+// ROUTER: /api/checkout
+const checkoutRouter = require("./checkout");
+router.use("/checkout", checkoutRouter);
+
+// ROUTER: /api/cart
+const cartRouter = require("./cart");
+router.use("/cart", cartRouter);
+
+module.exports = router;

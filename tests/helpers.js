@@ -6,7 +6,9 @@ const {
   createBillingAddress,
   createShippingAddress,
   createCart,
-  addItemToCart
+  addItemToCart,
+  createReview
+
 } = require("../db/models");
 const jwt = require("jsonwebtoken");
 const JWT_SECRET = process.env.JWT_SECRET
@@ -140,7 +142,7 @@ const createFakeCart = async (userId, guestId, productId, overrides = {}) => {
     throw new Error("createCart didn't return a cart with an ID");
   }
 
-  // Only add a cart item if productId is not null
+ 
   let cartItemId = null;
   if (fakeCartData.product_id !== null) {
     cartItemId = await addItemToCart(
@@ -156,6 +158,28 @@ const createFakeCart = async (userId, guestId, productId, overrides = {}) => {
   }
 
   return { cart_id: cartId, cart_item_id: cartItemId, ...fakeCartData };
+
+const createFakeReviews = async (productId, userId, numberOfReviews = 5) => {
+  const reviews = [];
+
+  for (let i = 0; i < numberOfReviews; i++) {
+    const fakeReviewData = {
+        productId,
+        userId,
+        rating: faker.number.int({ min: 1, max: 5 }),
+        reviewText: faker.lorem.paragraph(),
+        reviewDate: faker.date.past(),
+    };
+
+    const review = await createReview(fakeReviewData);
+    if (!review) {
+        throw new Error("createReview didn't return a review");
+    }
+
+    reviews.push(review);
+  }
+
+  return reviews;
 };
 
 module.exports = {
@@ -164,5 +188,6 @@ module.exports = {
     createFakeBikeProduct,
     createFakeShippingAddress,
     createFakeBillingAddress,
-    createFakeCart
+    createFakeCart,
+    createFakeReviews
 }

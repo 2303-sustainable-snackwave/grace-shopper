@@ -2,7 +2,7 @@ const client = require("../client");
 
 
 // This function creates a new cart for a logged-in user or a guest user.
-async function createCart(userId, guestId) {
+async function createCart({userId, guestId}) {
   try {
     const query = `
       INSERT INTO carts (user_id, guest_id)
@@ -18,7 +18,7 @@ async function createCart(userId, guestId) {
 }
 
 // This function adds a product item to the cart
-async function addItemToCart(userId, cartId, productId, quantity) {
+async function addItemToCart({userId, cartId, productId, quantity}) {
   try {
     const cart = await getCartById(cartId);
 
@@ -110,6 +110,21 @@ async function removeItemFromCart(userId, cartItemId) {
   }
 }
 
+async function getCartByUserId(userId) {
+  try {
+    const query = `
+      SELECT *
+      FROM carts
+      WHERE user_id = $1;
+    `;
+    const values = [userId];
+    const result = await client.query(query, values);
+    return result.rows[0];
+  } catch (error) {
+    throw new Error('Could not get cart items: ' + error.message);
+  }
+}
+
 // This function retrieves all cart items associated with a given cart ID.
 async function getCartItemsByCartId(cartId) {
   try {
@@ -179,6 +194,7 @@ module.exports = {
     addItemToCart,
     updateCartItemQuantity,
     removeItemFromCart,
+    getCartByUserId,
     getCartItemsByCartId,
     getCartById,
     getCartItemById

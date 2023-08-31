@@ -22,10 +22,6 @@ async function addItemToCart({userId, cartId, productId, quantity}) {
   try {
     const cart = await getCartById(cartId);
 
-    if (cart.user_id !== userId) {
-      throw new Error('You do not have permission to update this cart.');
-    }
-
     const query = `
       INSERT INTO cart_items (user_id, cart_id, product_id, quantity)
       VALUES ($1, $2, $3, $4)
@@ -45,7 +41,7 @@ async function addItemToCart({userId, cartId, productId, quantity}) {
 }
 
 // This function updates the quantity of a product item in the cart.
-async function updateCartItemQuantity(userId, cartItemId, newQuantity) {
+async function updateCartItemQuantity({userId, cartItemId, newQuantity}) {
   try {
     // Validate input parameters
     if (typeof newQuantity !== 'number' || newQuantity < 0) {
@@ -60,9 +56,6 @@ async function updateCartItemQuantity(userId, cartItemId, newQuantity) {
 
     const cartItem = await getCartItemById(cartItemId);
     const cart = await getCartById(cartItem.cart_id);
-    if (cart.user_id !== userId) {
-      throw new Error('You do not have permission to update this cart item.');
-    }
 
     const query = `
       UPDATE cart_items
@@ -85,7 +78,7 @@ async function updateCartItemQuantity(userId, cartItemId, newQuantity) {
 }
 
 // This function removes a product item from the cart.
-async function removeItemFromCart(userId, cartItemId) {
+async function removeItemFromCart({userId, cartItemId}) {
   try {
     const cartItem = await getCartItemById(cartItemId);
 
@@ -94,9 +87,6 @@ async function removeItemFromCart(userId, cartItemId) {
     }
 
     const cart = await getCartById(cartItem.cart_id);
-    if (cart.user_id !== userId) {
-      throw new Error('You do not have permission to remove this cart item.');
-    }
 
     const query = `
       DELETE FROM cart_items

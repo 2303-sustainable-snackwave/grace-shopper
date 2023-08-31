@@ -1,4 +1,5 @@
 const { faker } = require('@faker-js/faker');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { v4: uuidv4 } = require('uuid');
 const { 
   createUser, 
@@ -7,7 +8,8 @@ const {
   createShippingAddress,
   createCart,
   addItemToCart,
-  createReview
+  createReview,
+  createOrderInDatabase
 } = require("../db/models");
 const jwt = require("jsonwebtoken");
 const JWT_SECRET = process.env.JWT_SECRET
@@ -19,7 +21,7 @@ const createFakeUser = async (overrides = {}) => {
     name: faker.person.fullName(),
     email: faker.internet.email(),
     password: faker.internet.password(),
-    role: "user",
+    is_admin: false,
     billingAddressList: [],
     shippingAddressList: []
   };
@@ -181,12 +183,38 @@ const createFakeReviews = async (productId, userId, numberOfReviews = 5) => {
   return reviews;
 };
 
+const createFakeOrderWithProduct = async (productId, overrides = {}) => {
+  // Generate fake order data
+  const fakeOrderData = {
+    session_id: "1515155",
+    user_id: faker.number.int(),
+    order_date: new Date(),
+    total_amount: faker.finance.amount(),
+    billing_address_id: faker.number.int(),
+    shipping_address_id: faker.number.int(),
+    order_products: [{ product_id: productId, quantity: 1 }],
+    ...overrides,
+  };
+
+  // Insert the fake order into the order_history table
+  const insertedOrder = await createOrderInDatabase(fakeOrderData);
+  console.log("fake order data", insertedOrder);
+
+  if (!insertedOrder) {
+    throw new Error("createOrderInDatabase didn't return an order");
+  }
+
+  return insertedOrder;
+};
+
+
 module.exports = {
-    createFakeUser,
-    createFakeUserWithToken,
-    createFakeBikeProduct,
-    createFakeShippingAddress,
-    createFakeBillingAddress,
-    createFakeCart,
-    createFakeReviews
+  createFakeUser,
+  createFakeUserWithToken,
+  createFakeBikeProduct,
+  createFakeShippingAddress,
+  createFakeBillingAddress,
+  createFakeCart,
+  createFakeReviews,
+  createFakeOrderWithProduct
 }

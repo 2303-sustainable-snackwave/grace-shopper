@@ -1,28 +1,6 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const jwt = require("jsonwebtoken");
 
-// ROUTER: /api
-router.get("/", async (req, res, next) => {
-  try {
-    res.send({
-      message: "API is under construction!",
-    });
-  } catch (error) {
-    next(error);
-  }
-});
-
-// GET /api/health
-router.get("/health", async (req, res, next) => {
-  try {
-    res.send({
-      message: "Server is healthy!",
-    });
-  } catch (error) {
-    next(error);
-  }
-});
 
 // ROUTER: /api/users
 const usersRouter = require("./users");

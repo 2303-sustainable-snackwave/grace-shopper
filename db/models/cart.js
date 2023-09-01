@@ -48,12 +48,6 @@ async function updateCartItemQuantity({userId, cartItemId, newQuantity}) {
       throw new Error('Invalid quantity value');
     }
 
-    if (newQuantity === 0) {
-      // If new quantity is 0, remove the cart item using the existing function
-      await removeItemFromCart(userId, cartItemId);
-      return null; // Indicate that the cart item was removed
-    }
-
     const cartItem = await getCartItemById(cartItemId);
     const cart = await getCartById(cartItem.cart_id);
 
@@ -78,25 +72,23 @@ async function updateCartItemQuantity({userId, cartItemId, newQuantity}) {
 }
 
 // This function removes a product item from the cart.
-async function removeItemFromCart({userId, cartItemId}) {
+async function removeItemFromCart(cartItemId) {
   try {
-    const cartItem = await getCartItemById(cartItemId);
-
-    if (cartItem === null) {
-      throw new Error('Cart item not found.');
-    }
-
-    const cart = await getCartById(cartItem.cart_id);
-
     const query = `
       DELETE FROM cart_items
-      WHERE id = $1;
+      WHERE id = $1
+      RETURNING cart_id;
     `;
     const values = [cartItemId];
-    await client.query(query, values);
-    return true;
+    const result = await client.query(query, values);
+
+    if (result.rows.length === 0) {
+      throw new Error("Item could not be removed from cart");
+    }
+
+    return result.rows[0].cart_id;
   } catch (error) {
-    throw new Error('Could not remove item from cart: ' + error.message);
+    throw new Error('Item could not be removed from cart: ' + error.message);
   }
 }
 
@@ -118,20 +110,24 @@ async function getCartByUserId(userId) {
 // This function retrieves all cart items associated with a given cart ID.
 async function getCartItemsByCartId(cartId) {
   try {
-    const query = `
-      SELECT * FROM cart_items
+    const query =
+    `
+      SELECT *
+      FROM cart_items
       WHERE cart_id = $1;
     `;
+
     const values = [cartId];
+
     const result = await client.query(query, values);
 
     if (result.rows.length === 0) {
-      throw new Error('Could not get cart items: No cart items found for the given cart ID');
+      throw new Error('No cart items found for the given cart ID');
     }
 
     return result.rows;
   } catch (error) {
-    throw new Error('Could not get cart items: Invalid cart ID');
+    throw new Error('Could not get cart items: ' + error.message)
   }
 }
 
@@ -168,9 +164,9 @@ async function getCartItemById(cartItemId) {
     `;
     const values = [cartItemId];
     const result = await client.query(query, values);
-    
+
     if (result.rows.length === 0) {
-      throw new Error('Cart not found');
+      throw new Error('Cart item not found');
     }
 
     return result.rows[0];

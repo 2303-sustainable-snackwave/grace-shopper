@@ -9,7 +9,9 @@ const {
   createCart,
   addItemToCart,
   createReview,
-  createOrderInDatabase
+  createOrderInDatabase,
+  addBillingAddressToUser,
+  addShippingAddressToUser,
 } = require("../db/models");
 const jwt = require("jsonwebtoken");
 const JWT_SECRET = process.env.JWT_SECRET
@@ -84,17 +86,25 @@ const createFakeBillingAddress = async (userId, overrides = {}) => {
     postalCode: faker.location.zipCode(),
     country: faker.location.country()
   };
-  const billingAddress = await createBillingAddress(
-    userId,
-    fakeBillingAddressData.street,
-    fakeBillingAddressData.city,
-    fakeBillingAddressData.state,
-    fakeBillingAddressData.postalCode,
-    fakeBillingAddressData.country
-  );
+
+  const billingAddress = await createBillingAddress({
+    userId: userId,
+    street: fakeBillingAddressData.street,
+    city: fakeBillingAddressData.city,
+    state: fakeBillingAddressData.state,
+    postalCode: fakeBillingAddressData.postalCode,
+    country: fakeBillingAddressData.country
+  });
+
   if (!billingAddress) {
     throw new Error("createBillingAddress didn't return a billing address");
   }
+
+  await addBillingAddressToUser({
+    userId: userId,
+    billingAddressList: [billingAddress]
+  });
+
   return { ...billingAddress, ...overrides };
 };
 
@@ -106,24 +116,39 @@ const createFakeShippingAddress = async (userId, overrides = {}) => {
     postalCode: faker.location.zipCode(),
     country: faker.location.country()
   };
-  
-  const shippingAddress = await createShippingAddress(
-    userId,
-    fakeShippingAddressData.street,
-    fakeShippingAddressData.city,
-    fakeShippingAddressData.state,
-    fakeShippingAddressData.postalCode,
-    fakeShippingAddressData.country
-  );
+
+  const shippingAddress = await createShippingAddress({
+    userId: userId,
+    street: fakeShippingAddressData.street,
+    city: fakeShippingAddressData.city,
+    state: fakeShippingAddressData.state,
+    postalCode: fakeShippingAddressData.postalCode,
+    country: fakeShippingAddressData.country
+  });
+
   if (!shippingAddress) {
     throw new Error("createShippingAddress didn't return a shipping address");
   }
+
+  await addShippingAddressToUser({
+    userId: userId,
+    shippingAddressList: [shippingAddress]
+  });
+
   return { ...shippingAddress, ...overrides };
 };
 
-const createFakeCart = async (userId, guestId, productId, overrides = {}) => {
+
+async function createFakeCart(options = {}) {
+  const {
+    userId = null,
+    guestId = null,
+    productId = null,
+    overrides = {}
+  } = options;
+
   const fakeCartData = {
-    user_id: userId || null,
+    user_id: userId,
     guest_id: guestId !== null ? uuidv4() : null,
     created_at: faker.date.past(),
     updated_at: faker.date.recent(),
@@ -131,26 +156,26 @@ const createFakeCart = async (userId, guestId, productId, overrides = {}) => {
     ...overrides,
   };
 
-  const cartId = await createCart(
-    fakeCartData.user_id,
-    fakeCartData.guest_id,
-    fakeCartData.created_at,
-    fakeCartData.updated_at,
-    fakeCartData.product_id
-  );
+  // Simulate creating a cart in the database and return the cart ID
+  const cartId = await createCart({
+    userId: fakeCartData.user_id,
+    guestId: fakeCartData.guest_id
+  });
+  console.log("cartId data", cartId);
+
 
   if (!cartId) {
-    throw new Error("createCart didn't return a cart with an ID");
+    throw new Error("Could not create a cart with an ID");
   }
 
   let cartItemId = null;
   if (fakeCartData.product_id !== null) {
-    cartItemId = await addItemToCart(
-      fakeCartData.user_id,
-      cartId,
-      fakeCartData.product_id,
-      1
-    );
+    cartItemId = await addItemToCart({
+      userId: fakeCartData.user_id,
+      cartId: cartId,
+      productId: fakeCartData.product_id,
+      quantity: 1
+    });
 
     if (!cartItemId) {
       throw new Error("addItemToCart didn't return a cart item with an ID");
@@ -158,7 +183,9 @@ const createFakeCart = async (userId, guestId, productId, overrides = {}) => {
   }
 
   return { cart_id: cartId, cart_item_id: cartItemId, ...fakeCartData };
-};
+}
+
+
 
 const createFakeReviews = async (productId, userId, numberOfReviews = 5) => {
   const reviews = [];
@@ -183,29 +210,29 @@ const createFakeReviews = async (productId, userId, numberOfReviews = 5) => {
   return reviews;
 };
 
-const createFakeOrderWithProduct = async (productId, overrides = {}) => {
-  // Generate fake order data
-  const fakeOrderData = {
-    session_id: "1515155",
-    user_id: faker.number.int(),
-    order_date: new Date(),
-    total_amount: faker.finance.amount(),
-    billing_address_id: faker.number.int(),
-    shipping_address_id: faker.number.int(),
-    order_products: [{ product_id: productId, quantity: 1 }],
-    ...overrides,
-  };
+// const createFakeOrderWithProduct = async (productId, overrides = {}) => {
+//   // Generate fake order data
+//   const fakeOrderData = {
+//     session_id: "1515155",
+//     user_id: faker.number.int(),
+//     order_date: new Date(),
+//     total_amount: faker.finance.amount(),
+//     billing_address_id: faker.number.int(),
+//     shipping_address_id: faker.number.int(),
+//     order_products: [{ product_id: productId, quantity: 1 }],
+//     ...overrides,
+//   };
 
-  // Insert the fake order into the order_history table
-  const insertedOrder = await createOrderInDatabase(fakeOrderData);
-  console.log("fake order data", insertedOrder);
+//   // Insert the fake order into the order_history table
+//   const insertedOrder = await createOrderInDatabase(fakeOrderData);
+//   console.log("fake order data", insertedOrder);
 
-  if (!insertedOrder) {
-    throw new Error("createOrderInDatabase didn't return an order");
-  }
+//   if (!insertedOrder) {
+//     throw new Error("createOrderInDatabase didn't return an order");
+//   }
 
-  return insertedOrder;
-};
+//   return insertedOrder;
+// };
 
 
 module.exports = {
@@ -216,5 +243,5 @@ module.exports = {
   createFakeBillingAddress,
   createFakeCart,
   createFakeReviews,
-  createFakeOrderWithProduct
+  // createFakeOrderWithProduct
 }

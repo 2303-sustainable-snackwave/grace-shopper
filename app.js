@@ -11,8 +11,12 @@ app.use(express.json());
 
 
 // Routes
-app.use('/api', require('./api'));
-
+app.use('/api/users', require('./api/users'));
+app.use('/api/reviews', require('./api/reviews'));
+app.use('/api/products', require('./api/products'));
+app.use('/api/orders', require('./api/orders'));
+app.use('/api/checkout', require('./api/checkout'));
+app.use('/api/cart', require('./api/cart'));
 
 app.use((req, res, next) => {
   res.status(404).json({ error: "Not Found" });

@@ -27,7 +27,7 @@ describe("Billing and Shipping Address Functions", () => {
   let testUserId;
 
   beforeAll(async () => {
-    const fakeUser = await createFakeUser({ role: 'user' });
+    const fakeUser = await createFakeUser();
     testUserId = fakeUser.id;
     console.log("fakeUser:", fakeUser);
   });
@@ -42,14 +42,14 @@ describe("Billing and Shipping Address Functions", () => {
         country: "Country"
       };
 
-      const createdBillingAddress = await createBillingAddress(
-        testUserId,
-        fakeBillingAddressData.street,
-        fakeBillingAddressData.city,
-        fakeBillingAddressData.state,
-        fakeBillingAddressData.postalCode,
-        fakeBillingAddressData.country
-      );
+      const createdBillingAddress = await createBillingAddress({
+        userId: testUserId,
+        street: fakeBillingAddressData.street,
+        city: fakeBillingAddressData.city,
+        state: fakeBillingAddressData.state,
+        postalCode: fakeBillingAddressData.postalCode,
+        country: fakeBillingAddressData.country
+    });
 
       expect(createdBillingAddress).toBeDefined();
       expect(createdBillingAddress.user_id).toBe(testUserId);
@@ -69,10 +69,10 @@ describe("Billing and Shipping Address Functions", () => {
         },
       ];
 
-      const addedBillingAddresses = await addBillingAddressToUser(
-        testUserId,
-        fakeBillingAddressList
-      );
+      const addedBillingAddresses = await addBillingAddressToUser({ 
+        userId: testUserId, 
+        billingAddressList: fakeBillingAddressList,
+      });
 
       expect(addedBillingAddresses).toHaveLength(fakeBillingAddressList.length);
     });
@@ -99,14 +99,15 @@ describe("Billing and Shipping Address Functions", () => {
         country: "Country"
       };
 
-      const createdShippingAddress = await createShippingAddress(
-        testUserId,
-        fakeShippingAddressData.street,
-        fakeShippingAddressData.city,
-        fakeShippingAddressData.state,
-        fakeShippingAddressData.postalCode,
-        fakeShippingAddressData.country
-      );
+      const createdShippingAddress = await createShippingAddress({
+        userId: testUserId,
+        street: fakeShippingAddressData.street,
+        city: fakeShippingAddressData.city,
+        state: fakeShippingAddressData.state,
+        postalCode: fakeShippingAddressData.postalCode,
+        country: fakeShippingAddressData.country
+    });
+
 
       expect(createdShippingAddress).toBeDefined();
       expect(createdShippingAddress.user_id).toBe(testUserId);
@@ -127,17 +128,17 @@ describe("Billing and Shipping Address Functions", () => {
         },
       ];
 
-      const addedShippingAddresses = await addShippingAddressToUser(
-        testUserId,
-        fakeShippingAddressList
-      );
+      const addedShippingAddresses = await addShippingAddressToUser({ 
+        userId: testUserId, 
+        shippingAddressList: fakeShippingAddressList,
+      });
 
       expect(addedShippingAddresses).toHaveLength(fakeShippingAddressList.length);
     });
   });
 
-  describe("getShippingAddressByUserId", () => {
-    xit("should get shipping addresses by user ID", async () => {
+  xdescribe("getShippingAddressByUserId", () => {
+    it("should get shipping addresses by user ID", async () => {
       const shippingAddresses = await getShippingAddressByUserId(testUserId);
 
       expect(shippingAddresses).toBeDefined();
@@ -149,31 +150,24 @@ describe("Billing and Shipping Address Functions", () => {
     xit("should update a user's billing address", async () => {
       
       const fakeBillingAddress = await createFakeBillingAddress(testUserId);
-    
-      await addBillingAddressToUser(testUserId, [fakeBillingAddress]);
-    
-      const updatedBillingAddress = await updateUserBillingAddress(
-        testUserId,
-        fakeBillingAddress.id,
-        {
+
+      const updatedBillingAddress = await updateUserBillingAddress({
+        userId: testUserId,
+        addressId: fakeBillingAddress.id,
+        updatedAddressData: {
           street: '456 Oak St',
           city: 'Cityville',
           state: 'New State',
           postalCode: '12345',
           country: 'Country',
         }
-      );
-  
-  
-      expect(updatedBillingAddress).toBeDefined();
+      });
+
       expect(updatedBillingAddress.street).toBe('456 Oak St');
       expect(updatedBillingAddress.city).toBe('Cityville');
-  
-      const retrievedBillingAddresses = await getBillingAddressByUserId(testUserId);
-  
-      expect(retrievedBillingAddresses.length).toBe(1);
-      expect(retrievedBillingAddresses[0].street).toBe('456 Oak St');
-      expect(retrievedBillingAddresses[0].city).toBe('Cityville');
+      expect(updatedBillingAddress.state).toBe('New State');
+      expect(updatedBillingAddress.postal_code).toBe('12345');
+      expect(updatedBillingAddress.country).toBe('Country');
     });
   });
 
@@ -182,62 +176,42 @@ describe("Billing and Shipping Address Functions", () => {
       
       const fakeShippingAddress = await createFakeShippingAddress(testUserId);
     
-      await addShippingAddressToUser(testUserId, [fakeShippingAddress]);
-    
-      const updatedShippingAddress = await updateUserShippingAddress(
-        testUserId,
-        fakeShippingAddress.id,
-        {
+      const updatedShippingAddress = await updateUserShippingAddress({
+        userId: testUserId,
+        addressId: fakeShippingAddress.id,
+        updatedAddressData: {
           street: '456 Oak St',
           city: 'Cityville',
           state: 'New State',
           postalCode: '12345',
           country: 'Country',
         }
-      );
+      });
   
-      expect(updatedShippingAddress).toBeDefined();
       expect(updatedShippingAddress.street).toBe('456 Oak St');
       expect(updatedShippingAddress.city).toBe('Cityville');
-  
-      const retrievedShippingAddresses = await getShippingAddressByUserId(testUserId);
-  
-      expect(retrievedShippingAddresses.length).toBe(1);
-      expect(retrievedShippingAddresses[0].street).toBe('456 Oak St');
-      expect(retrievedShippingAddresses[0].city).toBe('Cityville');
+      expect(updatedShippingAddress.state).toBe('New State');
+      expect(updatedShippingAddress.postal_code).toBe('12345');
+      expect(updatedShippingAddress.country).toBe('Country');
     });
   });
 
   describe('deleteBillingAddress', () => {
-    xit('should delete a user\'s billing address', async () => {
+    xit("should delete a user's billing address", async () => {
+
       const fakeBillingAddress = await createFakeBillingAddress(testUserId);
-      await addBillingAddressToUser(testUserId, [fakeBillingAddress]);
-      const result = await deleteBillingAddress(testUserId, fakeBillingAddress.id);
-      expect(result).toBe(true);
+
+      const isDeleted = await deleteBillingAddress(fakeBillingAddress.id);
   
-      const addressQuery = await client.query(
-        `SELECT * FROM billing_addresses WHERE id = $1`,
-        [fakeBillingAddress.id]
-      );
-      const userBillingQuery = await client.query(
-        `SELECT * FROM user_billing_addresses WHERE id = $1`,
-        [fakeBillingAddress.id]
-      );
+      expect(isDeleted).toBe(true);
   
-      expect(addressQuery.rows.length).toBe(0);
-      expect(userBillingQuery.rows.length).toBe(0);
+      const billingAddresses  = await getBillingAddressByUserId(testUserId);
+      expect(billingAddresses).toHaveLength(0);
     });
   
     xit('should throw an error when trying to delete a non-existent address', async () => {
       const userId = 1; 
       const addressId = 999; 
-  
-      await expect(deleteBillingAddress(userId, addressId)).rejects.toThrow();
-    });
-  
-    xit('should throw an error when user doesn\'t have permission to delete the address', async () => {
-      const userId = 2; 
-      const addressId = 1; 
   
       await expect(deleteBillingAddress(userId, addressId)).rejects.toThrow();
     });
@@ -246,40 +220,18 @@ describe("Billing and Shipping Address Functions", () => {
   describe('deleteShippingAddress', () => {
     xit("should delete a user's shipping address", async () => {
       const fakeShippingAddress = await createFakeShippingAddress(testUserId);
-      console.log("fakeShippingAddress:", fakeShippingAddress);
 
-      await addShippingAddressToUser(testUserId, [fakeShippingAddress]);
+      const isDeleted = await deleteShippingAddress(fakeShippingAddress.id);
 
-      const result = await deleteShippingAddress(testUserId, fakeShippingAddress.id);
-      console.log("Deletion result:", result);
-  
-      const addressQuery = await client.query(
-        `SELECT * FROM shipping_addresses WHERE id = $1`,
-        [fakeShippingAddress.id]
-      );
-      console.log("Address query result:", addressQuery.rows);
-  
-      const userShippingQuery = await client.query(
-        `SELECT * FROM user_shipping_addresses WHERE id = $1`,
-        [fakeShippingAddress.id]
-      );
-      console.log("User shipping query result:", userShippingQuery.rows);
-  
-      expect(result).toBe(true);
-      expect(addressQuery.rows.length).toBe(0);
-      expect(userShippingQuery.rows.length).toBe(0);
+      expect(isDeleted).toBe(true);
+
+      const shippingAddresses  = await getShippingAddressByUserId(testUserId);
+      expect(shippingAddresses).toHaveLength(0);
     });
 
     xit('should throw an error when trying to delete a non-existent address', async () => {
       const userId = 1; 
       const addressId = 999; 
-  
-      await expect(deleteShippingAddress(userId, addressId)).rejects.toThrow();
-    });
-  
-    xit('should throw an error when user doesn\'t have permission to delete the address', async () => {
-      const userId = 2; 
-      const addressId = 1; 
   
       await expect(deleteShippingAddress(userId, addressId)).rejects.toThrow();
     });

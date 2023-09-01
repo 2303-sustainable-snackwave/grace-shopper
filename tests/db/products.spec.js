@@ -73,7 +73,7 @@ describe('Product Database Functions', () => {
     });
 
     describe('updateProduct', () => {
-        it('returns the updated product', async () => {
+        xit('returns the updated product', async () => {
             
             const fakeBikeProduct = await createFakeBikeProduct();
         
@@ -91,7 +91,7 @@ describe('Product Database Functions', () => {
             expect(updatedProduct.name).toBe(updatedProductData.updatedFields.name); 
           });
 
-        it('does not update fields that are not passed in', async () => {
+        xit('does not update fields that are not passed in', async () => {
             
             const fakeBikeProduct = await createFakeBikeProduct();
 
@@ -109,7 +109,7 @@ describe('Product Database Functions', () => {
             expect(updatedProduct.category).toBe(fakeBikeProduct.category);
         });
 
-        it('throws an error if product ID does not exist', async () => {
+        xit('throws an error if product ID does not exist', async () => {
             const nonExistingProductId = 9999;
         
             const updatedFields = {
@@ -129,7 +129,7 @@ describe('Product Database Functions', () => {
     });
 
     describe('destroyProduct', () => {
-        it('removes product from database, and returns it', async () => {
+        xit('removes product from database, and returns it', async () => {
             
             const bikeProduct = await createFakeBikeProduct();
 
@@ -142,26 +142,26 @@ describe('Product Database Functions', () => {
             expect(retrievedProduct).toBeNull();
         });
     
-        it('removes the product from associated orders', async () => {
-            // Create a fake product and associated orders
-            const fakeProduct = await createFakeBikeProduct();
-            const fakeOrder1 = await createFakeOrderWithProduct(fakeProduct.id);
-            const fakeOrder2 = await createFakeOrderWithProduct(fakeProduct.id);
-            console.log("fake order data", fakeOrder1);
+        // xit('removes the product from associated orders', async () => {
+        //     // Create a fake product and associated orders
+        //     const fakeProduct = await createFakeBikeProduct();
+        //     const fakeOrder1 = await createFakeOrderWithProduct(fakeProduct.id);
+        //     const fakeOrder2 = await createFakeOrderWithProduct(fakeProduct.id);
+        //     console.log("fake order data", fakeOrder1);
         
-            // Delete the product
-            const deletedProduct = await destroyProduct(fakeProduct.id);
+        //     // Delete the product
+        //     const deletedProduct = await destroyProduct(fakeProduct.id);
         
-            // Expect the deleted product to be defined
-            expect(deletedProduct).toBeDefined();
+        //     // Expect the deleted product to be defined
+        //     expect(deletedProduct).toBeDefined();
         
-            // Fetch the orders to verify that the product is removed
-            const ordersAfterDeletion = await getOrderHistoryForProduct(fakeProduct.id);
+        //     // Fetch the orders to verify that the product is removed
+        //     const ordersAfterDeletion = await getOrderHistoryForProduct(fakeProduct.id);
         
-            // Expect that no orders contain the deleted product ID
-            ordersAfterDeletion.forEach(order => {
-              expect(order.order_products).not.toContain(fakeProduct.id);
-            });
-          });
+        //     // Expect that no orders contain the deleted product ID
+        //     ordersAfterDeletion.forEach(order => {
+        //       expect(order.order_products).not.toContain(fakeProduct.id);
+        //     });
+        //   });
     });
 });

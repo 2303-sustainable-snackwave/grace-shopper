@@ -78,6 +78,7 @@ async function updateUserBillingAddress({userId, addressId, updatedAddressData})
 
     return updatedBillingAddress;
   } catch (error) {
+    console.error('Error in updateUserBillingAddress:', error);
     throw new Error('Could not update billing address: ' + error.message);
   }
 }

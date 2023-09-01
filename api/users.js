@@ -4,11 +4,13 @@ const bcrypt = require('bcrypt');
 const jwt = require("jsonwebtoken");
 
 const {
-    createUser,
-    getUser,
-    getUserById,
-    getUserByUsername,
-    getUserByEmail
+  createUser,
+  getAllUsers,
+  getUserById,
+  getUserByName,
+  getUserByEmail,
+  updateUser,
+  deleteUser,
 } = require('../db/models/users')
 /* 
     Waiting on db/checkout 

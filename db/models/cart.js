@@ -107,6 +107,21 @@ async function getCartByUserId(userId) {
   }
 }
 
+async function getCartByGuestId(userId) {
+  try {
+    const query = `
+      SELECT *
+      FROM carts
+      WHERE guest_id = $1;
+    `;
+    const values = [guestId];
+    const result = await client.query(query, values);
+    return result.rows[0];
+  } catch (error) {
+    throw new Error('Could not get cart items: ' + error.message);
+  }
+}
+
 // This function retrieves all cart items associated with a given cart ID.
 async function getCartItemsByCartId(cartId) {
   try {
@@ -183,5 +198,6 @@ module.exports = {
     getCartByUserId,
     getCartItemsByCartId,
     getCartById,
-    getCartItemById
+    getCartItemById,
+    getCartByGuestId
 }

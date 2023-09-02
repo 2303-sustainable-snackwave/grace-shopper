@@ -61,8 +61,36 @@ async function getOrderDetailsByOrderId(orderId) {
   }
 }
 
+async function getOrdersByDateRange({startDate, endDate}) {
+  try {
+    const { rows } = await client.query(
+      `
+      SELECT
+        id,
+        user_id,
+        order_date,
+        total_amount,
+        shipping_address_id,
+        billing_address_id,
+        order_products
+      FROM
+        order_history
+      WHERE
+        order_date >= $1
+        AND order_date <= $2;
+      `,
+      [startDate, endDate]
+    );
+;
+    return rows;
+  } catch (error) {
+    throw new Error('Could not retrieve orders by date range: ' + error.message);
+  }
+}
+
 module.exports = {
-    getOrderByUserId,
-    getOrderHistoryForProduct,
-    getOrderDetailsByOrderId
+  getOrderByUserId,
+  getOrderHistoryForProduct,
+  getOrderDetailsByOrderId,
+  getOrdersByDateRange
 }

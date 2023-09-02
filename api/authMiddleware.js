@@ -79,15 +79,7 @@ function isAdminOrOwner(req, res, next) {
   }
 }
 
-function isAdmin(req, res, next) {
-  if (req.user.is_admin) {
-    // User is an admin allow access
-    next();
-  } else {
-    // User is not authorized, send a forbidden response
-    throw new AdminPermissionError('You do not have permission to access this feature.');
-  }
-}
+module.exports = isAdmin;
 
 module.exports = { 
   verifyToken,

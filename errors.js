@@ -31,54 +31,6 @@ class CartError extends Error {
   }
 }
 
-class UserError extends Error {
-  constructor(message = 'User Error.') {
-    super(message);
-    this.name = 'UserError';
-    this.statusCode = 404; 
-  }
-}
-
-class ProductError extends Error {
-  constructor(message = 'Product Error.') {
-    super(message);
-    this.name = 'ProductError';
-    this.statusCode = 404; 
-  }
-}
-
-class ReviewError extends Error {
-  constructor(message = 'Review Error.') {
-    super(message);
-    this.name = 'ReviewError';
-    this.statusCode = 404; 
-  }
-}
-
-class CartValidationFailedError extends Error {
-  constructor(message = 'Cart validation failed.', status = 400) {
-    super(message);
-    this.name = 'CartValidationFailedError';
-    this.status = status;
-  }
-}
-
-class ProductValidationFailedError extends Error {
-  constructor(message = 'Product validation failed.', status = 400) {
-    super(message);
-    this.name = 'ProductValidationFailedError';
-    this.status = status;
-  }
-}
-
-class ReviewValidationFailedError extends Error {
-  constructor(message = 'Review validation failed.', status = 400) {
-    super(message);
-    this.name = 'ReviewValidationFailedError';
-    this.status = status;
-  }
-}
-
 class OrderHistoryError extends Error {
   constructor(message = 'Order History Error', status = 404) {
     super(message);

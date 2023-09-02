@@ -1,10 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const { verifyToken, isAdmin } = require('./authMiddleware');
-const { 
-  ProductError,
-  ProductValidationFailedError
-} = require('../errors');
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+
 const {
   createProducts,
   getProductById,

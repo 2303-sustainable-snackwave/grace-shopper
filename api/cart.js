@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const { verifyToken, checkCartPermission } = require('./authMiddleware');
 const { 
-  CartError
+  CartError,
+  CartValidationFailedError
 } = require('../errors');
 const {
     createCart,
@@ -52,7 +53,7 @@ router.put('/cart/items/:cartItemId', async (req, res, next) => {
     const { cartItemId } = req.params;
 
     if (typeof newQuantity !== 'number' || newQuantity < 0) {
-      return res.status(400).json({ message: 'Invalid quantity value.' });
+      next(new CartValidationFailedError('Invalid quantity value.'));
     }
 
     const updatedCartItem = await updateCartItemQuantity({
@@ -76,7 +77,7 @@ router.delete('/cart/items/:cartItemId', async (req, res, next) => {
     const removedCartId = await removeItemFromCart(cartItemId);
 
     if (!removedCartId) {
-      return res.status(404).json({ message: 'Item could not be found in the cart.' });
+      next(new CartError('Item could not be found in the cart.'));
     }
 
     res.json({ message: 'Cart item removed successfully.' });
@@ -93,7 +94,7 @@ router.get('/cart/items/:cartId', async (req, res, next) => {
     const cartItems = await getCartItemsByCartId(cartId);
 
     if (!cartItems) {
-      return res.status(404).json({ message: 'No cart items found for the given cart ID.' });
+      next(new CartError('No cart items found for the given cart ID.'));
     }
 
     res.json({ cartItems });
@@ -112,7 +113,7 @@ router.get('/cart', async (req, res, next) => {
       : await getCartByGuestId(guestId);
 
     if (!cart) {
-      return res.status(404).json({ message: 'Cart not found.' });
+      next(new CartError('Cart not found.'));
     }
 
     const cartItems = await getCartItemsByCartId(cart.id);
@@ -131,7 +132,7 @@ router.get('/cart/items/:cartItemId', async (req, res, next) => {
     const cartItem = await getCartItemById(cartItemId);
 
     if (!cartItem) {
-      return res.status(404).json({ message: 'Cart item not found.' });
+      next(new CartError('Cart item not found.'));
     }
 
     res.json({ cartItem });

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { verifyToken, generateToken, isAuthorizedToUpdateProfile, isAdminOrOwner} = require('./authMiddleware');
+const { verifyToken, isAuthorizedToUpdate, isAdmin} = require('./authMiddleware');
 const {
   getOrderByUserId,
   getOrderHistoryForProduct,
@@ -14,7 +14,7 @@ const {
 // Order API Routers
 
 // GET /api/orders/user/:userId
-router.get('/user/:userId', verifyToken, isAuthorizedToUpdateProfile, async (req, res, next) => {
+router.get('/user/:userId', verifyToken, isAuthorizedToUpdate, async (req, res, next) => {
   try {
     const { userId } = req.params;
 
@@ -67,24 +67,8 @@ router.get('/:orderId', verifyToken, async (req, res, next) => {
   }
 });
 
-// GET /api/orders/all
-router.get('/all', verifyToken, verifyIfAdmin, async (req, res, next) => {
-  try {
-    // Retrieve all orders
-    const allOrders = await getAllOrders();
-
-    if (!allOrders) {
-      throw new OrderHistoryError('No orders found.');
-    }
-
-    res.json({ allOrders });
-  } catch (error) {
-    next(error);
-  }
-});
-
 // GET /api/orders/by-date
-router.get('/by-date', verifyToken, verifyIfAdmin, async (req, res, next) => {
+router.get('/by-date', verifyToken, isAdmin, async (req, res, next) => {
   try {
     const { startDate, endDate } = req.query; 
 

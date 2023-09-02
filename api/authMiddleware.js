@@ -50,16 +50,16 @@ const checkCartPermission = async (req, res, next) => {
   }
 };
 
-function isAuthorizedToUpdateProfile(req, res, next) {
+function isAuthorizedToUpdate(req, res, next) {
   try {
     // Ensure that the user is logged in
     if (!req.user) {
       throw new AuthenticationError('Authentication required.');
     }
 
-    // Check if the user is trying to update their own profile
+    // Check if the user is trying to update their own data
     if (req.params.userId !== req.user.userId && !isAdmin) {
-      throw new PermissionError('You are not authorized to update this profile.');
+      throw new PermissionError('You are not authorized to make this update.');
     }
 
     // If the user is authorized, allow access
@@ -75,16 +75,25 @@ function isAdminOrOwner(req, res, next) {
     next();
   } else {
     // User is not authorized, send a forbidden response
-    res.status(403).json({ message: 'You do not have permission to access this feature.' });
+    throw new PermissionError('You do not have permission to access this feature.');
   }
 }
 
-module.exports = isAdmin;
+function isAdmin(req, res, next) {
+  if (req.user.is_admin) {
+    // User is an admin allow access
+    next();
+  } else {
+    // User is not authorized, send a forbidden response
+    throw new AdminPermissionError('You do not have permission to access this feature.');
+  }
+}
 
 module.exports = { 
   verifyToken,
   checkCartPermission,
   generateToken,
   isAdminOrOwner,
-  isAuthorizedToUpdateProfile
+  isAdmin,
+  isAuthorizedToUpdate
 };

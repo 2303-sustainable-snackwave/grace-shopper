@@ -1,8 +1,10 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-
+const { verifyToken, isAdmin } = require('./authMiddleware');
+const { 
+  ProductError,
+  ProductValidationFailedError
+} = require('../errors');
 const {
   createProducts,
   getProductById,
@@ -10,45 +12,12 @@ const {
   getAllProducts,
   updateProduct,
   destroyProduct,
-} = require("../db/models/products");
+} = require('../db/models/products');
 
-// GET /api/products
-
-router.post("/", async (req, res, next) => {
-  try {
-    const products = await getAllProducts();
-
-    res.json(products);
-  } catch (error) {
-    next(error);
-  }
-});
 
 // POST /api/products
-
-router.post("/", async (req, res, next) => {
-  const token = req.headers.authorization?.split(" ")[1];
-
-  if (!token) {
-    return res.status(401).json({
-      error: "No token provided",
-      message: "You must be logged in to perform this action",
-      name: "UnauthorizedError",
-    });
-  }
-
+router.post('/', verifyToken, isAdmin, async (req, res, next) => {
   try {
-    const decodedToken = jwt.verify(token, process.env.JWT_ADMIN);
-    const userId = decodedToken?.id;
-
-    if (!userId) {
-      return res.status(401).json({
-        error: "Invalid token",
-        message: "You must be logged in as an admin to perform this action",
-        name: "UnauthorizedError",
-      });
-    }
-
     const {
       category,
       brand,
@@ -76,80 +45,95 @@ router.post("/", async (req, res, next) => {
       availability,
       total_inventory,
     });
-    res.status(201).json(newProduct);
+
+    res.json(newProduct);
   } catch (error) {
-    next(error);
+    next(new ProductValidationFailedError('There was an error creating product'));
   }
 });
 
-// PATCH /api/products/:id
-
-router.patch("/:id", async (req, res, next) => {
-  const token = req.headers.authorization?.split(" ")[1];
-
-  if (!token) {
-    return res.status(401).json({
-      error: "No token provided",
-      message: "You must be logged in to perform this action",
-      name: "UnauthorizedError",
-    });
-  }
-
+// GET /api/products
+router.get('/', async (req, res, next) => {
   try {
-    const decodedToken = jwt.verify(token, process.env.JWT_ADMIN);
-    const userId = decodedToken?.id;
+    const products = await getAllProducts();
+    res.json(products);
+  } catch (error) {
+    next(new ProductError('There was an error retrieving the products.'));
+  }
+});
 
-    if (!userId) {
-      return res.status(401).json({
-        error: "Invalid token",
-        message: "You must be logged in as an admin to perform this action",
-        name: "UnauthorizedError",
-      });
+// GET /api/products/:productId
+router.get('/:productId', async (req, res, next) => {
+  try {
+    const { productId } = req.params;
+    const product = await getProductById(productId);
+
+    if (!product) {
+      throw new ProductError('Product not found');
     }
 
-    const { id } = req.params;
-    const updatedProduct = await updateProduct({ id, ...req.body });
+    res.json(product);
+  } catch (error) {
+    next(new ProductError('There was an error retrieving the product.'));
+  }
+});
+
+// PATCH /api/products/:productId
+router.patch('/products/:productId', verifyToken, isAdmin, async (req, res, next) => {
+  try {
+    const { productId } = req.params;
+    const updatedFields = req.body;
+
+    const existingProduct = await getProductById(productId);
+
+    if (!existingProduct) {
+      throw new ProductError('Product not found');
+    }
+
+    const updatedProduct = await updateProduct({ productId, updatedFields });
+
     res.json(updatedProduct);
   } catch (error) {
-    next(error);
+    next(new ProductError('There was an error updating the product details.'));
   }
 });
 
-// DELETE /api/products
-
-router.delete("/:id", async (req, res, next) => {
-  const token = req.headers.authorization?.split(" ")[1];
-
-  if (!token) {
-    return res.status(401).json({
-      error: "No token provided",
-      message: "You must be logged in to perform this action",
-      name: "UnauthorizedError",
-    });
-  }
-
+// DELETE /api/products/:productId
+router.delete('/products/:productId', verifyToken, isAdmin, async (req, res, next) => {
   try {
-    const decodedToken = jwt.verify(token, process.env.JWT_ADMIN);
-    const userId = decodedToken?.id;
+    const { productId } = req.params;
 
-    if (!userId) {
-      return res.status(401).json({
-        error: "Invalid token",
-        message: "You must be logged in as an admin to perform this action",
-        name: "UnauthorizedError",
-      });
+    const existingProduct = await getProductById(productId);
+
+    if (!existingProduct) {
+      throw new ProductError('Product not found');
     }
 
-    const { id } = req.params;
-    const deletedProduct = await destroyProduct(id);
+    const deletedProduct = await destroyProduct(productId);
 
-    if (deletedProduct) {
-      res.json(deletedProduct);
-    } else {
-      res.sendStatus(404);
+    if (!deletedProduct) {
+      throw new ProductError('Error deleting the product');
     }
+
+    res.json({ message: 'Product deleted successfully' });
   } catch (error) {
-    next(error);
+    next(new ProductError('There was an error deleting the product'));
+  }
+});
+
+// GET /api/products/without-orders
+router.get('/products/without-orders', async (req, res, next) => {
+  try {
+    
+    const productsWithoutOrders = await getProductsWithoutOrders();
+
+    if (!productsWithoutOrders) {
+      throw new ProductError('No products without orders found.');
+    }
+
+    res.json(productsWithoutOrders);
+  } catch (error) {
+    next(new ProductError('There was an error retrieving products without orders.'));
   }
 });
 

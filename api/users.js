@@ -3,10 +3,12 @@ const router = express.Router();
 const bcrypt = require('bcrypt');
 const { validationResult } = require('express-validator');
 const jwt = require("jsonwebtoken");
-const { verifyToken, generateToken, isAuthorizedToUpdateProfile, isAdminOrOwner} = require('./authMiddleware');
+const { verifyToken, generateToken, isAuthorizedToUpdate, isAdminOrOwner} = require('./authMiddleware');
 const { 
   RegistrationError,
-  AuthenticationError
+  AuthenticationError,
+  UserError,
+  PermissionError
 } = require('../errors');
 const {
   createUser,
@@ -126,52 +128,47 @@ router.get("/me", verifyToken, async (req, res, next) => {
 
     res.json({ user });
   } catch (error) {
-    next(error);
+    next(new UserError('There was an error finding user.'));
   }
 });
 
 // PATCH /api/users/:userId (Update user profile)
-router.patch('/:userId', verifyToken, isAuthorizedToUpdateProfile, isAdminOrOwner, async (req, res, next) => {
+router.patch('/:userId', verifyToken, isAuthorizedToUpdate, isAdminOrOwner, async (req, res, next) => {
   try {
     const { userId: targetUserId } = req.params;
     const { is_admin: isAdminUpdate, ...updatedUserData } = req.body;
 
-    // Check if a regular user is trying to see or change is_admin status
     if (!isAdmin && isAdminUpdate !== undefined) {
-      return res.status(403).json({ message: 'You do not have permission to see or change the is_admin status.' });
+      throw new PermissionError('You do not have permission to see or change the is_admin status.');
     }
 
-    // If an admin user is trying to change their own is_admin status, deny the action
     if (isAdminUpdate !== undefined && req.user.userId === targetUserId) {
-      return res.status(403).json({ message: 'You do not have permission to change your own is_admin status.' });
+      throw new PermissionError('You do not have permission to change your own is_admin status.');
     }
 
-    // Update only the fields provided in the request body
     const updatedUser = await updateUser({ userId: targetUserId, updatedFields: updatedUserData });
 
-    // Remove sensitive information
     delete updatedUser.password;
 
     res.json({ updatedUser });
   } catch (error) {
-    next(error);
+    next(new UserError('There was an error updating user.'));
   }
 });
 
-router.delete('/delete-account/:userId', verifyToken, isAuthorizedToUpdateProfile, async (req, res, next) => {
+router.delete('/delete-account/:userId', verifyToken, isAuthorizedToUpdate, async (req, res, next) => {
   try {
     const { userId } = req.params;
 
     const deletedUser = await deleteUser(userId);
 
-    // Check if the user was successfully deleted
     if (deletedUser) {
       res.json({ message: 'User account deleted successfully' });
     } else {
-      res.status(404).json({ message: 'User not found' });
+      throw new AuthenticationError('User not found.');
     }
   } catch (error) {
-    next(error); // Handle any errors
+    next(new UserError('There was an deleting user.'));
   }
 });
 

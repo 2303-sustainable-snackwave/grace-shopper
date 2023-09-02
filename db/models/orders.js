@@ -11,6 +11,16 @@ async function getOrderByUserId(userId) {
       `,
       [userId]
     );
+  try {
+    const { rows } = await client.query(`
+      SELECT oh.id, oh.user_id, oh.order_date, oh.total_amount, 
+      oh.shipping_address_id, oh.billing_address_id, oh.order_products
+      FROM order_history oh
+      INNER JOIN users u ON oh.user_id = u.id 
+      WHERE oh.user_id = $1
+      `,
+      [userId]
+    );
         
     return rows;
   } catch (error) {
@@ -28,7 +38,27 @@ async function getOrderHistoryForProduct(productId) {
       `,
       [productId]
     );
+    return rows;
+  } catch (error) {
+    throw new Error('Could not retrieve order history for user: ' + error.message);
+  }
+}
 
+async function getOrderHistoryForProduct(productId) {
+  try {
+    const { rows } = await client.query(
+      `
+      SELECT *
+      FROM order_history
+      WHERE $1 = ANY(order_products)
+      `,
+      [productId]
+    );
+
+    return rows;
+  } catch (error) {
+    throw new Error('Could not retrieve order history for product: ' + error.message);
+  }
     return rows;
   } catch (error) {
     throw new Error('Could not retrieve order history for product: ' + error.message);

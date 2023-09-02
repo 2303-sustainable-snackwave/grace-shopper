@@ -7,11 +7,6 @@ const {
   getOrderDetailsByOrderId,
   getOrdersByDateRange
 } = require('../db/models/orders');
-const { 
-  OrderHistoryError,
-} = require('../errors');
-
-// Order API Routers
 
 // GET /api/orders/user/:userId
 router.get('/user/:userId', verifyToken, isAuthorizedToUpdate, async (req, res, next) => {

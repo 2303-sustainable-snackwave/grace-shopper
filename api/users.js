@@ -3,13 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcrypt');
 const { validationResult } = require('express-validator');
 const jwt = require("jsonwebtoken");
-const { verifyToken, generateToken, isAuthorizedToUpdate, isAdminOrOwner} = require('./authMiddleware');
-const { 
-  RegistrationError,
-  AuthenticationError,
-  UserError,
-  PermissionError
-} = require('../errors');
+require("dotenv").config();
 const {
   createUser,
   getAllUsers,

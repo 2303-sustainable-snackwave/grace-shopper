@@ -91,6 +91,94 @@ export const fetchUserCheckout = async (username, token) => {
     }
 };
 
+//Fetch a user's cart
+export const fetchUserCart = async (username, token) => {
+    try{
+        const response = await fetch(`${BASE_URL}/${username}/cart`,{
+            headers:{
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`,
+            },
+        });
+        const data = await response.json();
+        if (response.ok) {
+            return data;
+        } else {
+            throw new Error(data.message);
+        }
+    } catch (error) {
+        console.error("Error fetching user cart:", error);
+        throw error;
+    }
+}
+
+// Add a product to the user's cart
+export const addProductToCart = async (username, productId, token) => {
+    try {
+        const response = await fetch(`${BASE_URL}/${username}/cart`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`,
+            },
+            body: JSON.stringify({ productId }),
+        });
+        const data = await response.json();
+        if (response.ok) {
+            return data;
+        } else {
+            throw new Error(data.message);
+        }
+    } catch (error) {
+        console.error("Error adding product to cart:", error);
+        throw error;
+    }
+};
+
+//Update a product in cart by ID
+export const updateProductInCart = async (username, productId, number ) => {
+    try {
+        const response = await fetch(`${BASE_URL}/${username}/cart/${productId}`, {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ number }),
+        });
+        const data = await response.json();
+        if (response.ok) {
+            return data;
+        } else {
+            throw new Error(data.error);
+        }
+    } catch (error) {
+        console.error("Error updating review:", error);
+        throw error;
+    }
+};
+
+// Delete a product from the user's cart
+export const deleteProductFromCart = async (username, productId, token) => {
+    try {
+        const response = await fetch(`${BASE_URL}/${username}/cart/${productId}`, {
+            method: "DELETE",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`,
+            },
+        });
+        if (response.ok) {
+            return await response.json();
+        } else {
+            const data = await response.json();
+            throw new Error(data.message);
+        }
+    } catch (error) {
+        console.error("Error deleting product from cart:", error);
+        throw error;
+    }
+};
+
 // Fetch all products
 export const fetchAllProducts = async () => {
     try {
@@ -257,3 +345,93 @@ export const deleteOrderById = async (orderId) => {
         throw error;
     }
 };
+
+// Fetch all reviews by product ID
+export const fetchReviewsByProductId = async (productId) => {
+    try {
+        const response = await fetch(`${PRODUCTS_BASE_URL}/${productId}/reviews`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+            },
+        });
+        const data = await response.json();
+        if (response.ok) {
+            return data;
+        } else {
+            throw new Error(data.message);
+        }
+    } catch (error) {
+        console.error("Error fetching reviews by product ID:", error);
+        throw error;
+    }
+};
+
+
+// Add a review to a product
+export const addReviewToProduct = async (productId, reviewData, token) => {
+    try {
+        const response = await fetch(`${PRODUCTS_BASE_URL}/${productId}/reviews`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`,
+            },
+            body: JSON.stringify({reviewData}),
+        });
+        const data = await response.json();
+        if (response.ok) {
+            return data;
+        } else {
+            throw new Error(data.message);
+        }
+    } catch (error) {
+        console.error("Error adding review to product:", error);
+        throw error;
+    }
+};
+
+
+//Update a reivew by ID
+export const updateReviewById = async (productId, reviewId, content) => {
+    try {
+        const response = await fetch(`${PRODUCTS_BASE_URL}/${productId}/reviews/${reviewId}`, {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ content }),
+        });
+        const data = await response.json();
+        if (response.ok) {
+            return data;
+        } else {
+            throw new Error(data.error);
+        }
+    } catch (error) {
+        console.error("Error updating review:", error);
+        throw error;
+    }
+};
+
+//Delete a reivew by ID
+export const deleteReviewById = async (productId, reviewId) => {
+    try {
+        const response = await fetch(`${PRODUCTS_BASE_URL}/${productId}/reviews/${reviewId}`, {
+            method: "DELETE",
+            headers: {
+                "Content-Type": "application/json",
+            },
+        });
+        if (response.ok) {
+            return await response.json();
+        } else {
+            const data = await response.json();
+            throw new Error(data.error);
+        }
+    } catch (error) {
+        console.error("Error deleting review:", error);
+        throw error;
+    }
+};
+

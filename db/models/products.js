@@ -1,7 +1,5 @@
 const client = require("../client");
 
-// Updated
-
 async function createProducts({
     category,
     brand,
@@ -14,11 +12,8 @@ async function createProducts({
     amount,
     availability,
     total_inventory,
-}, requestingUserRole) {
+}) {
   try {
-    if (requestingUserRole !== "admin") {
-      throw new Error("Only admin users can create products.");
-    }
     const {
       rows: [products],
     } = await client.query(
@@ -119,13 +114,13 @@ async function getAllProducts() {
 //   } catch (error) {}
 // }
 
-async function updateProduct(productId, updatedFields, requestingUserRole) {
+async function updateProduct({productId, updatedFields}) {
   try {
     const { 
       category, 
       brand, 
       name, 
-      image_url, 
+      imageUrl, 
       description , 
       min_price, 
       max_price, 
@@ -134,10 +129,6 @@ async function updateProduct(productId, updatedFields, requestingUserRole) {
       availability,
       total_inventory     
     } = updatedFields;
-
-    if (requestingUserRole !== 'admin') {
-      throw new Error('Only admin users can update products.');
-    }
 
     const existingProduct = await getProductById(productId);
     if (!existingProduct) {
@@ -167,36 +158,33 @@ async function updateProduct(productId, updatedFields, requestingUserRole) {
   }
 }
 
-async function destroyProduct(id, requestingUserRole) {
+async function destroyProduct(id) {
   try {
-    if (requestingUserRole !== "admin") {
-      throw new Error("Only admin users can delete products.");
-    }
     const deletedProduct = await getProductById(id);
 
-      if (!deletedProduct) {
-            return null;
-      }
+    if (!deletedProduct) {
+      return null;
+    }
 
-      // await client.query(
-      //   `
-      //   DELETE FROM product_orders
-      //   WHERE "productId" = $1
-      //   `,
-      //   [id]
-      // );
+    await client.query(
+      `
+      DELETE FROM order_history
+      WHERE $1 = ANY(order_products)
+      `,
+      [id]
+    );
 
-      const { rowCount } = await client.query(
-        `
-        DELETE FROM products
-        WHERE id = $1
-        `,
-        [id]
-      );
+    const { rowCount } = await client.query(
+      `
+      DELETE FROM products
+      WHERE id = $1
+      `,
+      [id]
+    );
 
-      if (rowCount === 0) {
-        return null;
-      }
+    if (rowCount === 0) {
+      return null;
+    }
 
     return deletedProduct;
   } catch (error) {

@@ -1,6 +1,6 @@
 const client = require("../client");
 
-async function createShippingAddress(userId, street, city, state, postalCode, country) {
+async function createShippingAddress({userId, street, city, state, postalCode, country}) {
     try {
       const result = await client.query(
         `
@@ -17,7 +17,7 @@ async function createShippingAddress(userId, street, city, state, postalCode, co
     }
 }
 
-async function addShippingAddressToUser(userId, shippingAddressList) {
+async function addShippingAddressToUser({userId, shippingAddressList}) {
   try {    
     const createdShippingAddresses = [];
     for (const shippingAddress of shippingAddressList) {
@@ -57,7 +57,7 @@ async function getShippingAddressByUserId(userId) {
   }
 }
 
-async function updateUserShippingAddress(userId, addressId, updatedAddressData) {
+async function updateUserShippingAddress({userId, addressId, updatedAddressData}) {
   try {
     const { street, city, state, postalCode, country } = updatedAddressData;
 
@@ -83,23 +83,19 @@ async function updateUserShippingAddress(userId, addressId, updatedAddressData) 
   }
 }
 
-async function deleteShippingAddress(userId, addressId) {
+async function deleteShippingAddress(addressId) {
   try {
-    const shippingAddress = await client.query(
+    const shippingAddressInfo = await client.query(
       `
-      SELECT user_id, shipping_address_id
+      SELECT shipping_address_id, user_id
       FROM user_shipping_addresses
       WHERE id = $1
       `,
       [addressId]
     );
 
-    if (!shippingAddress || shippingAddress.rows.length === 0) {
+    if (!shippingAddressInfo || shippingAddressInfo.rows.length === 0) {
       throw new Error(`Shipping address with ID ${addressId} not found.`);
-    }
-
-    if (shippingAddress.rows[0].user_id !== userId) {
-      throw new Error('You do not have permission to delete this shipping address.');
     }
 
     await client.query(
@@ -115,10 +111,10 @@ async function deleteShippingAddress(userId, addressId) {
       DELETE FROM shipping_addresses
       WHERE id = $1
       `,
-      [shippingAddress.rows[0].shipping_address_id]
+      [shippingAddressInfo.rows[0].shipping_address_id]
     );
 
-    return true;
+    return true; 
   } catch (error) {
     throw new Error('Could not delete shipping address: ' + error.message);
   }

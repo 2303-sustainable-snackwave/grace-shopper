@@ -29,7 +29,6 @@ describe('User Database Functions', () => {
         password: faker.internet.password(),
         email: faker.internet.email(),
         password: faker.internet.password(),
-        role: "user",
       };
 
       // Act
@@ -39,7 +38,6 @@ describe('User Database Functions', () => {
       expect(user).toBeDefined();
       expect(user.name).toBe(fakeUserData.name);
       expect(user.email).toBe(fakeUserData.email);
-      expect(user.role).toBe(fakeUserData.role);
     });
 
     xit('does not return the password', async () => {
@@ -49,7 +47,6 @@ describe('User Database Functions', () => {
         password: faker.internet.password(),
         email: faker.internet.email(),
         password: faker.internet.password(),
-        role: "user"
       };
 
       const user = await createUser(fakeUserData);
@@ -64,7 +61,6 @@ describe('User Database Functions', () => {
         name: "Nicole Smith",
         password: faker.internet.password(),
         email: faker.internet.email(),
-        role: "user",
       };
       await createUser(fakeUserData);
 
@@ -79,14 +75,12 @@ describe('User Database Functions', () => {
         name: "Issac Newton",
         password: faker.internet.password(),
         email: faker.internet.email(),
-        role: "user",
       };
       await createUser(fakeUserData);
       const user = await getUser({
         name: "Issac Newton",
         password: "Bad Password",
         email: faker.internet.email(),
-        role: "user",
       });
       expect(user).toBeNull();
     });
@@ -96,7 +90,6 @@ describe('User Database Functions', () => {
         name: "Michael Jordan",
         password: faker.internet.password(),
         email: faker.internet.email(),
-        role: "user",
       };
       await createUser(fakeUserData);
 
@@ -163,37 +156,37 @@ describe('User Database Functions', () => {
       
       const updatedUserData = {
         userId: fakeUser.id,
-        name: 'New Name',
-        password: 'newpassword',
-        email: 'newemail@example.com',
-        role: 'user'
+        updatedFields: {
+          name: 'New Name',
+          password: 'newpassword',
+          email: 'newemail@example.com',
+        },
       };
   
-      const updatedUser = await updateUser(updatedUserData.userId, updatedUserData, 'admin');
+      const updatedUser = await updateUser(updatedUserData);
   
       expect(updatedUser).toBeDefined();
       expect(updatedUser.id).toBe(fakeUser.id);
-      expect(updatedUser.name).toBe(updatedUserData.name);
-      expect(updatedUser.email).toBe(updatedUserData.email);
-      expect(updatedUser.role).toBe(updatedUserData.role);
+      expect(updatedUser.name).toBe(updatedUserData.updatedFields.name);
+      expect(updatedUser.email).toBe(updatedUserData.updatedFields.email);
     });
   
     xit('updates the name, password, or email as necessary', async () => {
       const fakeUser = await createFakeUser();
-
       const updatedUserData = {
         userId: fakeUser.id,
-        name: faker.person.fullName(),
-        password: faker.internet.password(),
-        email: faker.internet.email(), 
+        updatedFields: {
+          name: faker.person.fullName(),
+          password: faker.internet.password(),
+          email: faker.internet.email(),
+        } 
       };
-  
-      const updatedUser = await updateUser(updatedUserData.userId, updatedUserData);
-
+    
+      const updatedUser = await updateUser(updatedUserData);
       expect(updatedUser).toBeDefined();
-      expect(updatedUser.id).toBe(updatedUserData.userId);
-      expect(updatedUser.name).toBe(updatedUserData.name);
-      expect(updatedUser.email).toBe(updatedUserData.email);
+      expect(updatedUser.id).toBe(fakeUser.id);
+      expect(updatedUser.name).toBe(updatedUserData.updatedFields.name);
+      expect(updatedUser.email).toBe(updatedUserData.updatedFields.email);
     });
   
     xit('does not update fields that are not passed in', async () => {
@@ -201,69 +194,53 @@ describe('User Database Functions', () => {
   
       const updatedUserData = {
         userId: fakeUser.id,
-        name: faker.person.fullName(),
-        email: fakeUser.email,
+        updatedFields: {
+          name: faker.person.fullName(),
+          email: faker.internet.email(),
+        } 
       };
   
-      const updatedUser = await updateUser(updatedUserData.userId, updatedUserData);
+      const updatedUser = await updateUser(updatedUserData);
 
       expect(updatedUser).toBeDefined();
-      expect(updatedUser.id).toBe(updatedUserData.userId);
-      expect(updatedUser.name).toBe(updatedUserData.name);
-      expect(updatedUser.email).toBe(fakeUser.email); 
-    });
-  
-    xit('only an "admin" can update role', async () => {
-      const fakeUser = await createFakeUser();
-    
-      await expect(
-        updateUser(
-          fakeUser.id,
-          { role: 'admin' }, 
-          'user' 
-        )
-      ).rejects.toThrow("Could not update user: You do not have permission to update this user.");
+      expect(updatedUser.id).toBe(fakeUser.id);
+      expect(updatedUser.name).toBe(updatedUserData.updatedFields.name);
+      expect(updatedUser.email).toBe(updatedUserData.updatedFields.email); 
     });
   
     xit('throws an error if user ID does not exist', async () => {
       const userData = {
         userId: 999999999,
-        name: faker.person.fullName(),
-        email: faker.internet.email(),
+        updatedFields: {
+          name: faker.person.fullName(),
+          email: faker.internet.email(),
+        } 
       };
   
-      await expect(updateUser(userData.userId, userData)).rejects.toThrowError(
+      await expect(updateUser(userData)).rejects.toThrowError(
         `Could not update user: User with ID ${userData.userId} not found.`
       );
     });
   });
 
   describe('deleteUser', () => {
-    xit('deletes a user if requester is admin', async () => {
-      const adminUser = await createFakeUser({ role: 'admin' });
+    xit('deletes a user', async () => {
       const userToDelete = await createFakeUser();
+      const deletedUser = await deleteUser(userToDelete.id);
     
-      const result = await deleteUser(userToDelete.id, adminUser.role);
+      expect(deletedUser).toBeDefined();
+      expect(deletedUser.id).toBe(userToDelete.id);
+      expect(deletedUser.name).toBe(userToDelete.name);
+      expect(deletedUser.email).toBe(userToDelete.email);
     
-      expect(result).toBe(true);
-    
-      const deletedUser = await getUserById(userToDelete.id);
-      expect(deletedUser).toBeNull();
+      const getUser = await getUserById(userToDelete.id);
+      expect(getUser).toBeNull();
     });
-  
-    xit('throws an error if requester is not an admin', async () => {
-      const nonAdminUser = await createFakeUser({ role: 'user' });
-      const userToDelete = await createFakeUser();
-  
-      await expect(deleteUser(userToDelete.id, nonAdminUser.role)).rejects.toThrowError(
-        'Only admin users can delete users.'
-      );
-    });
+    
   
     xit('throws an error if user ID does not exist', async () => {
-      const adminUser = await createFakeUser({ role: 'admin' });
   
-      await expect(deleteUser(9999999, adminUser.role)).rejects.toThrowError(
+      await expect(deleteUser(9999999)).rejects.toThrowError(
         'Could not delete user: User with ID 9999999 not found.'
       );
     });

@@ -1,14 +1,17 @@
 const express = require("express");
 const router = express.Router();
 const bcrypt = require('bcrypt');
+const { validationResult } = require('express-validator');
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const {
-    createUser,
-    getUser,
-    getUserById,
-    getUserByUsername,
-    getUserByEmail
+  createUser,
+  getAllUsers,
+  getUserById,
+  getUserByName,
+  getUserByEmail,
+  updateUser,
+  deleteUser,
 } = require('../db/models/users')
 /* 
     Waiting on db/checkout 
@@ -21,162 +24,146 @@ const {
 
 // POST /api/users/register
 
-router.post('/register', async (req, res, next) => {
-    const { username, password }= req.body;
-    try {
-        const userExists = await getUserByUsername(username);
-        if (userExists) {
-            return res.status(409).json({
-                error: 'Username already exists.',
-                message: `User ${username} is already taken.`,
-                name: 'UserExistsError'
-            });
-        }
-        if (password.length < 8) {
-            return res.status(400).json({
-                error: 'Password must be at least 8 characters long',
-                message: 'Password Too Short!',
-                name: 'UserPasswordError'
-            });
-        }
-        const newUser = await createUser({ username, password });
-      const token = jwt.sign(
-        {
-          id: newUser.id,
-          username: newUser.username,
-        },
-        process.env.JWT_SECRET,
-        {
-          expiresIn: "1w",
-        }
-      );
-      res.json({
-        message: "Thank you for signing up",
-        token,
-        user: {
-          id: newUser.id,
-          username: newUser.username,
-        },
-      });
-    } catch ({ name, message }) {
-        next({
-            name: "UserRegistrationError",
-            message: "There was an error registering user",
-          });
+router.post('/register', async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
     }
+
+    const { name, email, password } = req.body;
+      const userExists = await getUserByEmail(email);
+      if (userExists) {
+        return res.status(409).json({
+          error: 'Email already exists.',
+          message: `${email} is already in use.`,
+          name: 'EmailExistsError'
+        });
+      }
+      if (password.length < 8) {
+        return res.status(400).json({
+          error: 'Password must be at least 8 characters long',
+          message: 'Password Too Short!',
+          name: 'UserPasswordError'
+        });
+      }
+      
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newUser = await createUser({ name, email, password: hashedPassword });
+    const token = generateToken(newUser.id, newUser.email);
+    res.status(201).json({
+      message: "Thank you for signing up",
+      token,
+      user: {
+        id: newUser.id,
+        name: newUser.name,
+        email: newUser.email,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    next(new RegistrationError('Registration failed.'));
+  }
 });
 
 // POST /api/users/login
 
 router.post('/login', async (req, res, next) => {
-    const { username, password } = req.body;
-    try {
-        // Are we using the email for login purposes? Because I can change the the async await here!
-        const user = await getUserByUsername(username);
-        if (!user) {
-            return next ({
-                error: "User not found",
-                message: "User with the provided username does not exist",
-                name: "UserNotFoundError",
-            });
-        }
-        const passwordMatch = await bcrypt.compare(password, user.password);
-        if (!passwordMatch) {
-            return next ({
-                error: "Invalid credentials",
-                message: "Invalid username or password",
-                name: "InvalidCredentialsError",
-            });
-        }
-        const token = jwt.sign(
-            {
-                id: user.id,
-                username: user.username,
-              },
-              process.env.JWT_SECRET,
-              {
-                expiresIn: "1w",
-              }
-        );
-        res.json({
-            message: "you're logged in!",
-            token,
-            user: {
-              id: user.id,
-              username: user.username,
-            },
-          });
-
-    } catch ({ name, message }) {
-        next({
-            name: 'LoginError',
-            message: 'There was an error during login'
-          });
+  try {
+    const { email, password } = req.body;
+    const user = await getUserByEmail(email);
+    if (!user) {
+      return res.status(401).json({
+          error: 'Email not found.',
+          message: 'User with the provided email does not exist',
+          name: 'EmailNotFoundError'
+      });
     }
+    const passwordMatch = await bcrypt.compare(password, user.password);
+     if (!passwordMatch) {
+      return res.status(401).json({
+        error: 'Invalid credentials',
+        message: 'Invalid email or password',
+        name: 'InvalidCredentialsError',
+      });
+    }
+    const token = generateToken(user.id, user.email);
+    res.status(200).json({
+      message: "you're logged in!",
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    next(new AuthenticationError('Authentication failed.'));
+  }
 });
 
 // GET /api/users/me
+router.get("/me", verifyToken, async (req, res, next) => {
+  try {
 
-router.get("/me", async (req, res, next) => {
-    try {
-      const token = req.headers.authorization?.split(" ")[1];
-      if (!token) {
-        return res.status(401).json({
-          error: "No token provided",
-          message: "You must be logged in to perform this action",
-          name: "UnauthorizedError",
-        });
-      }
-      const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
-      if (!decodedToken || !decodedToken.id) {
-        return res.status(401).json({
-          error: "Invalid token",
-          message: "You must be logged in to perform this action",
-          name: "UnauthorizedError",
-        });
-      }
-      const userId = decodedToken.id;
-      const user = await getUserById(userId);
-      if (!user) {
-        return res.status(401).json({
-          error: "User not found",
-          message: "You must be logged in to perform this action",
-          name: "UnauthorizedError",
-        });
-      }
-      res.json(user);
-    } catch (error) {
-      next(error);
+    if (!req.user) {
+      throw new AuthenticationError('You must be logged in to perform this action.');
     }
+
+    const user = await getUserById(req.user.userId);
+
+    if (!user) {
+      throw new AuthenticationError('User not found.');
+    }
+
+    delete user.password;
+
+    res.json({ user });
+  } catch (error) {
+    next(new UserError('There was an error finding user.'));
+  }
 });
 
-// GET /api/users/:username/checkout
+// PATCH /api/users/:userId (Update user profile)
+router.patch('/:userId', verifyToken, isAuthorizedToUpdate, isAdminOrOwner, async (req, res, next) => {
+  try {
+    const { userId: targetUserId } = req.params;
+    const { is_admin: isAdminUpdate, ...updatedUserData } = req.body;
 
-router.get("/:username/checkout", async (req, res, next) => {
-    try {
-      const token = req.headers.authorization?.split(" ")[1];
-      if (!token) {
-        return res.status(401).json({ error: "You must be logged in to perform this action" });
-      }
-      const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
-      if (!decodedToken || !decodedToken.id) {
-        return res.status(401).json({ error: "Invalid token" });
-      }
-      const username = req.params.username;
-      const user = await getUserByUsername(username);
-      if (!user) {
-        return res.status(404).json({ error: "User not found" });
-      }
-      if (decodedToken.username === username) {
-        const allRoutines = await getAllCheckoutByUser({ username });
-        return res.json(allRoutines);
-      } else {
-        const publicRoutines = await getPublicCheckoutByUser({ username });
-        return res.json(publicRoutines);
-      }
-    } catch (error) {
-      next(error);
+    if (!isAdmin && isAdminUpdate !== undefined) {
+      throw new PermissionError('You do not have permission to see or change the is_admin status.');
     }
+
+    if (isAdminUpdate !== undefined && req.user.userId === targetUserId) {
+      throw new PermissionError('You do not have permission to change your own is_admin status.');
+    }
+
+    const updatedUser = await updateUser({ userId: targetUserId, updatedFields: updatedUserData });
+
+    delete updatedUser.password;
+
+    res.json({ updatedUser });
+  } catch (error) {
+    next(new UserError('There was an error updating user.'));
+  }
+});
+
+router.delete('/delete-account/:userId', verifyToken, isAuthorizedToUpdate, async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+
+    const deletedUser = await deleteUser(userId);
+
+    if (deletedUser) {
+      res.json({ message: 'User account deleted successfully' });
+    } else {
+      throw new AuthenticationError('User not found.');
+    }
+  } catch (error) {
+    next(new UserError('There was an deleting user.'));
+  }
 });
 
 module.exports = router;

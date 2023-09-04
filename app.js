@@ -6,7 +6,23 @@ const pgSession = require('connect-pg-simple')(session);
 const app = express();
 const cors = require('cors');
 const morgan = require('morgan');
-const { NotFoundError, AuthenticationError, ValidationError } = require('./errors');
+const {
+  NotFoundError,
+  AuthenticationError,
+  ValidationError,
+  CartError,
+  UserError,
+  ProductError,
+  ReviewError,
+  OrderHistoryError,
+  PermissionError,
+  CartValidationFailedError,
+  ProductValidationFailedError,
+  ReviewValidationFailedError,
+  TokenVerificationError,
+  RegistrationError,
+  AdminPermissionError,
+} = require('./errors');
 
 // Setup your Middleware
 app.use(cors());
@@ -44,14 +60,46 @@ app.use((err, req, res, next) => {
     res.status(401).json({ error: err.message });
   } else if (err instanceof ValidationError) {
     res.status(422).json({ error: err.message, details: err.details });
+  } else if (err instanceof CartError) {
+    // Handle your custom CartError here
+    res.status(404).json({ error: err.message });
+  } else if (err instanceof UserError) {
+    // Handle your custom UserError here
+    res.status(404).json({ error: err.message });
+  } else if (err instanceof ProductError) {
+    // Handle your custom ProductError here
+    res.status(404).json({ error: err.message });
+  } else if (err instanceof ReviewError) {
+    // Handle your custom ReviewError here
+    res.status(404).json({ error: err.message });
+  } else if (err instanceof OrderHistoryError) {
+    // Handle your custom OrderHistoryError here
+    res.status(404).json({ error: err.message });
+  } else if (err instanceof PermissionError) {
+    // Handle your custom PermissionError here
+    res.status(403).json({ error: err.message });
+  } else if (err instanceof CartValidationFailedError) {
+    // Handle your custom CartValidationFailedError here
+    res.status(400).json({ error: err.message });
+  } else if (err instanceof ProductValidationFailedError) {
+    // Handle your custom ProductValidationFailedError here
+    res.status(400).json({ error: err.message });
+  } else if (err instanceof ReviewValidationFailedError) {
+    // Handle your custom ReviewValidationFailedError here
+    res.status(400).json({ error: err.message });
+  } else if (err instanceof TokenVerificationError) {
+    // Handle your custom TokenVerificationError here
+    res.status(400).json({ error: err.message });
+  } else if (err instanceof RegistrationError) {
+    // Handle your custom RegistrationError here
+    res.status(400).json({ error: err.message });
+  } else if (err instanceof AdminPermissionError) {
+    // Handle your custom AdminPermissionError here
+    res.status(403).json({ error: err.message });
   } else {
-    next(err); 
+    console.error(err.stack);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
-});
-
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Internal Server Error' });
 });
 
 module.exports = app;

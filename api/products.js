@@ -1,8 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-
+const { verifyToken, isAdmin } = require('./authMiddleware');
+const { 
+  ProductValidationFailedError,
+  ProductError
+} = require('../errors');
 const {
   createProducts,
   getProductById,
@@ -46,7 +48,7 @@ router.post('/', verifyToken, isAdmin, async (req, res, next) => {
 
     res.json(newProduct);
   } catch (error) {
-    next(new ProductValidationFailedError('There was an error creating product'));
+    next(new ProductValidationFailedError('There was an error creating the product: ' + error.message));
   }
 });
 
@@ -82,20 +84,27 @@ router.patch('/products/:productId', verifyToken, isAdmin, async (req, res, next
     const { productId } = req.params;
     const updatedFields = req.body;
 
+    console.log('Product ID:', productId); // Add this log to check the productId
+
     const existingProduct = await getProductById(productId);
 
     if (!existingProduct) {
+      console.log('Product not found'); // Add this log to check if the product exists
       throw new ProductError('Product not found');
     }
 
+    console.log('Existing Product:', existingProduct); // Add this log to check the existing product
+
     const updatedProduct = await updateProduct({ productId, updatedFields });
+
+    console.log('Updated Product:', updatedProduct); // Add this log to check the updated product
 
     res.json(updatedProduct);
   } catch (error) {
+    console.error('Error:', error); // Add this log to catch and log any errors
     next(new ProductError('There was an error updating the product details.'));
   }
 });
-
 // DELETE /api/products/:productId
 router.delete('/products/:productId', verifyToken, isAdmin, async (req, res, next) => {
   try {

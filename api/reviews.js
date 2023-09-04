@@ -9,7 +9,7 @@ const {
   createReview,
   getAllReviews,
   getReviewsByProduct,
-} = require('../db/models/review');
+} = require('../db/models/reviews');
 
 // POST /api/reviews
 router.post('/', verifyToken, async (req, res, next) => {

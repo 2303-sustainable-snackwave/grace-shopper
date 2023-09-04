@@ -148,8 +148,6 @@ async function getUserByEmail(email) {
     if (!user) {
       return null;
     }
-
-    delete user.password;
     
     return user;
   } catch (error) {

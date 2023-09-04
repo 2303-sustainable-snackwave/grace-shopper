@@ -12,16 +12,15 @@ function generateToken(userId, email) {
 
 function verifyToken(req, res, next) {
   const token = req.headers.authorization?.split(" ")[1];
-  
+
   if (token) {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       req.user = decoded;
     } catch (error) {
-      throw new TokenVerificationError('Invalid token');
+      next(new TokenVerificationError('Invalid token'));
     }
   }
-
   // Allow guests to proceed without token
   next();
 }
@@ -71,15 +70,20 @@ function isAuthorizedToUpdate(req, res, next) {
 
 function isAdminOrOwner(req, res, next) {
   if (req.user && (req.user.is_admin || req.user.userId === req.params.userId)) {
-    // User is an admin or is the owner of the profile, allow access
     next();
   } else {
-    // User is not authorized, send a forbidden response
-    throw new PermissionError('You do not have permission to access this feature.');
+    next(new PermissionError('You do not have permission to access this feature.'));
   }
 }
 
-module.exports = isAdmin;
+function isAdmin(req, res, next) {
+  console.log('isAdmin middleware - User:', req.user);
+  if (req.user.is_admin) {
+    next();
+  } else {
+    next(new AdminPermissionError('You do not have permission to access this feature.'));
+  }
+}
 
 module.exports = { 
   verifyToken,

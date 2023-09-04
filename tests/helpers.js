@@ -1,3 +1,4 @@
+require("dotenv").config();
 const { faker } = require('@faker-js/faker');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { v4: uuidv4 } = require('uuid');
@@ -23,7 +24,7 @@ const createFakeUser = async (overrides = {}) => {
     name: faker.person.fullName(),
     email: faker.internet.email(),
     password: faker.internet.password(),
-    is_admin: false,
+    is_admin: overrides.isAdmin || false, 
     billingAddressList: [],
     shippingAddressList: []
   };
@@ -34,19 +35,24 @@ const createFakeUser = async (overrides = {}) => {
   return { ...user, ...overrides };
 };
 
-const createFakeUserWithToken = async (email) => {
-    const fakeUser = await createFakeUser(email);
-  
-    const token = jwt.sign(
-      { id: fakeUser.id, email: fakeUser.email },
-      JWT_SECRET,
-      { expiresIn: "1w" }
-    );
-  
-    return {
-      fakeUser,
-      token,
-    };
+const createFakeUserWithToken = async (name, email, is_admin = false) => {
+  const fakeUser = await createFakeUser({ name, email, is_admin });
+
+  const token = jwt.sign(
+    { 
+      id: fakeUser.id,
+      name: fakeUser.name,
+      email: fakeUser.email,
+      is_admin: fakeUser.is_admin 
+    },
+    JWT_SECRET,
+    { expiresIn: "1w" }
+  );
+
+  return {
+    fakeUser,
+    token,
+  };
 };
 
 const createFakeBikeProduct = async (overrides = {}) => {

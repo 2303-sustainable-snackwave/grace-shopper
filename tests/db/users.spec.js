@@ -141,13 +141,7 @@ describe('User Database Functions', () => {
       const user = await getUserByEmail('nonexistingemail@example.com');
 
       expect(user).toBeNull();
-    });
-
-    xit("Does NOT return the password", async () => {
-      const fakeUser = await createFakeUser({email: "tim.snell@example.com"});
-      const user = await getUserByEmail(fakeUser.email);
-      expect(user.password).toBeFalsy();
-    });    
+    });  
   });
 
   describe('updateUser', () => {

@@ -2,27 +2,20 @@ const express = require("express");
 const router = express.Router();
 const bcrypt = require('bcrypt');
 const { validationResult } = require('express-validator');
-const jwt = require("jsonwebtoken");
-require("dotenv").config();
+const { verifyToken, generateToken, isAuthorizedToUpdate, isAdminOrOwner} = require('./authMiddleware');
+const { 
+  UserError,
+  RegistrationError,
+  AuthenticationError,
+  PermissionError
+} = require('../errors');
 const {
   createUser,
-  getAllUsers,
   getUserById,
-  getUserByName,
   getUserByEmail,
   updateUser,
   deleteUser,
 } = require('../db/models/users')
-/* 
-    Waiting on db/checkout 
-
-    const {
-    getAllCheckoutByUser
-    getPublicCheckoutByUser
-    } = require('../db/models/checkout')
-} */
-
-// POST /api/users/register
 
 router.post('/register', async (req, res) => {
   try {
@@ -107,21 +100,26 @@ router.post('/login', async (req, res, next) => {
 // GET /api/users/me
 router.get("/me", verifyToken, async (req, res, next) => {
   try {
-
     if (!req.user) {
       throw new AuthenticationError('You must be logged in to perform this action.');
     }
 
-    const user = await getUserById(req.user.userId);
+    const user = await getUserById(req.user.id);
 
     if (!user) {
       throw new AuthenticationError('User not found.');
     }
 
-    delete user.password;
-
     res.json({ user });
   } catch (error) {
+    // console.error('Error in /api/users/me:', error);
+
+    if (error instanceof AuthenticationError) {
+      // Handle authentication-related errors (e.g., token validation)
+      return res.status(401).json({ error: error.message });
+    }
+
+    // Handle other errors (e.g., database errors)
     next(new UserError('There was an error finding user.'));
   }
 });

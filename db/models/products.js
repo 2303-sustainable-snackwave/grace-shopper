@@ -102,18 +102,6 @@ async function getAllProducts() {
   }
 }
 
-// async function getAllProductsByOrders({ orders }) {
-//   // Needs to built out after orders
-//   try {
-//   } catch (error) {}
-// }
-
-// async function getProductsByOrdered({ id }) {
-//   // fleshout after db/orders.js
-//   try {
-//   } catch (error) {}
-// }
-
 async function updateProduct({productId, updatedFields}) {
   try {
     const { 

@@ -1,52 +1,52 @@
 const client = require("../client");
 
 async function createProducts({
-    category,
-    brand,
-    name,
-    imageUrl,
-    description,
-    min_price,
-    max_price,
-    currency_code,
-    amount,
-    availability,
-    total_inventory,
+  categoryId,
+  brand,
+  name,
+  imageUrl,
+  description,
+  min_price,
+  max_price,
+  currency_code,
+  amount,
+  availability,
+  total_inventory,
 }) {
-  try {
-    const {
-      rows: [products],
-    } = await client.query(
-      ` INSERT INTO products(category,
-        brand,
-        name,
-        imageUrl,
-        description,
-        min_price,
-        max_price,
-        currency_code,
-        amount,
-        availability,
-        total_inventory )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-            RETURNING *;
-            `,
-      [category,
-        brand,
-        name,
-        imageUrl,
-        description,
-        min_price,
-        max_price,
-        currency_code,
-        amount,
-        availability,
-        total_inventory]
-    );
-    return products;
-  } catch (error) {
-    throw new Error('Could not create product: ' + error.message);
-  }
+try {
+  const {
+    rows: [product],
+  } = await client.query(
+    ` INSERT INTO products(category_id,
+      brand,
+      name,
+      imageUrl,
+      description,
+      min_price,
+      max_price,
+      currency_code,
+      amount,
+      availability,
+      total_inventory )
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+          RETURNING *;
+          `,
+    [categoryId,
+      brand,
+      name,
+      imageUrl,
+      description,
+      min_price,
+      max_price,
+      currency_code,
+      amount,
+      availability,
+      total_inventory]
+  );
+  return product;
+} catch (error) {
+  throw new Error('Could not create product: ' + error.message);
+}
 }
 
 async function getProductById(id) {
@@ -104,8 +104,7 @@ async function getAllProducts() {
 
 async function updateProduct({productId, updatedFields}) {
   try {
-    const { 
-      category, 
+    const {  
       brand, 
       name, 
       imageUrl, 
@@ -180,11 +179,12 @@ async function destroyProduct(id) {
   }
 }
 
+
 module.exports = {
   createProducts,
   getProductById,
   getProductsWithoutOrders,
   getAllProducts,
   updateProduct,
-  destroyProduct
+  destroyProduct,
 };

@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+const { v4: uuidv4 } = require('uuid');
 const { 
   PermissionError,
   TokenVerificationError,
@@ -8,6 +9,11 @@ const {
 
 function generateToken(userId, email) {
   return jwt.sign({ userId, email }, process.env.JWT_SECRET, { expiresIn: '1w' });
+}
+
+function generateGuestId() {
+  // Generate a UUID (Version 4)
+  return uuidv4();
 }
 
 function verifyToken(req, res, next) {
@@ -20,7 +26,13 @@ function verifyToken(req, res, next) {
     } catch (error) {
       next(new TokenVerificationError('Invalid token'));
     }
+  } else {
+    // If there is no token, generate a guest ID and assign it to the user
+    req.user = {
+      guestId: generateGuestId(),
+    };
   }
+
   // Allow guests to proceed without token
   next();
 }
@@ -78,7 +90,7 @@ function isAdminOrOwner(req, res, next) {
 
 function isAdmin(req, res, next) {
   console.log('isAdmin middleware - User:', req.user);
-  if (req.user.is_admin) {
+  if (req?.user?.is_admin) {
     next();
   } else {
     next(new AdminPermissionError('You do not have permission to access this feature.'));

@@ -1,10 +1,27 @@
 const client = require("../client");
+const ORDER_STATUSES = require('./orderStatus.js');
+
+async function getAllOrders() {
+  try {
+
+    const query = `
+      SELECT *
+      FROM order_history;
+    `;
+
+    const result = await client.query(query);
+
+    return result.rows;
+  } catch (error) {
+    throw new Error('Could not retrieve all orders: ' + error.message);
+  }
+}
 
 async function getOrderByUserId(userId) {
   try {
     const { rows } = await client.query(`
       SELECT oh.id, oh.user_id, oh.order_date, oh.total_amount, 
-      oh.shipping_address_id, oh.billing_address_id, oh.order_products
+      oh.shipping_address_id, oh.billing_address_id, oh.order_products, oh.status
       FROM order_history oh
       INNER JOIN users u ON oh.user_id = u.id 
       WHERE oh.user_id = $1
@@ -39,9 +56,9 @@ async function getOrderDetailsByOrderId(orderId) {
   try {
     const { rows } = await client.query(
       `
-      SELECT oh.id AS order_id, oh.user_id, u.username, oh.order_date, 
-             oh.total_amount, sa.address AS shipping_address, ba.address AS billing_address,
-             oh.order_products
+      SELECT oh.id AS order_id, oh.user_id, u.name, oh.order_date, 
+          oh.total_amount, sa.address AS shipping_address, ba.address AS billing_address,
+          oh.order_products, oh.status
       FROM order_history oh
       INNER JOIN users u ON oh.user_id = u.id 
       INNER JOIN shipping_addresses sa ON oh.shipping_address_id = sa.id
@@ -72,7 +89,8 @@ async function getOrdersByDateRange({startDate, endDate}) {
         total_amount,
         shipping_address_id,
         billing_address_id,
-        order_products
+        order_products,
+        status
       FROM
         order_history
       WHERE
@@ -88,9 +106,52 @@ async function getOrdersByDateRange({startDate, endDate}) {
   }
 }
 
+async function getOrdersByStatus(status) {
+  try {
+    const query = `
+      SELECT *
+      FROM order_history
+      WHERE status = $1;
+    `;
+
+    const values = [status];
+
+    const { rows } = await client.query(query, values);
+
+    return rows;
+  } catch (error) {
+    throw new Error('Error fetching orders by status: ' + error.message);
+  }
+}
+
+async function updateOrdersByStatus(orderIds, newStatus) {
+  try {
+    if (!Object.values(ORDER_STATUSES).includes(newStatus)) {
+      throw new Error('Invalid order status.');
+    }
+
+    const query = `
+      UPDATE order_history
+      SET status = $1
+      WHERE id = ANY($2)
+      RETURNING *;
+    `;
+
+    const values = [newStatus, orderIds];
+    const { rows } = await client.query(query, values);
+
+    return rows;
+  } catch (error) {
+    throw new Error('Could not update orders by status: ' + error.message);
+  }
+}
+
 module.exports = {
+  getAllOrders,
   getOrderByUserId,
   getOrderHistoryForProduct,
   getOrderDetailsByOrderId,
-  getOrdersByDateRange
+  getOrdersByDateRange,
+  getOrdersByStatus,
+  updateOrdersByStatus
 }

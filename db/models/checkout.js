@@ -15,6 +15,22 @@ async function createCheckoutSession({ lineItems, successUrl, cancelUrl }) {
     throw new Error('Could not create checkout session: ' + error.message);
   }
 }
+
+async function createPaymentIntent(amount) {
+  try {
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: amount,
+      currency: 'usd',
+      automatic_payment_methods: {
+        enabled: true,
+      },
+    });
+  
+    return paymentIntent;
+  } catch (error) {
+    throw new Error('Could not create payment intent: ' + error.message);
+  }
+}
   
 async function createOrderInDatabase({ sessionID, userID, orderDate, totalAmount,  billingAddressID, shippingAddressID, orderProducts }) {
   try {
@@ -36,4 +52,5 @@ async function createOrderInDatabase({ sessionID, userID, orderDate, totalAmount
 module.exports = {
   createCheckoutSession,
   createOrderInDatabase,
+  createPaymentIntent
 };

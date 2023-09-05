@@ -157,7 +157,7 @@ async function getUserByEmail(email) {
 
 async function updateUser({ userId, updatedFields }) {
   try {
-    const { name, email, password } = updatedFields;
+    const { name, email, password, isAdmin } = updatedFields;
 
     const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
 
@@ -171,6 +171,11 @@ async function updateUser({ userId, updatedFields }) {
     if (hashedPassword) {
       query += ', password = $3';
       values.push(hashedPassword);
+    }
+
+    if (isAdmin !== undefined) {
+      query += ', is_admin = $4';
+      values.push(isAdmin);
     }
 
     query += `

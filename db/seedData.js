@@ -20,6 +20,7 @@ async function dropTables() {
       DROP TABLE IF EXISTS user_shipping_addresses CASCADE; 
       DROP TABLE IF EXISTS shipping_addresses CASCADE;
       DROP TABLE IF EXISTS products CASCADE;
+      DROP TABLE IF EXISTS categories CASCADE;
       DROP TABLE IF EXISTS product_reviews CASCADE;
       DROP TABLE IF EXISTS order_history CASCADE;
       DROP TABLE IF EXISTS carts CASCADE;
@@ -39,99 +40,98 @@ async function createTables() {
     console.log("Starting to create table...");
 
     await client.query(`
-    CREATE TABLE users (
+
+    CREATE TABLE products (
       id SERIAL PRIMARY KEY,
-      name VARCHAR(255) NOT NULL,
-      email VARCHAR(255) UNIQUE NOT NULL,
-      password VARCHAR(255) NOT NULL,
-      is_admin BOOLEAN NOT NULL
+      category_id INT REFERENCES categories(id),
+      brand TEXT,
+      name TEXT,
+      imageUrl TEXT,
+      description TEXT,
+      min_price DECIMAL(10, 2) NOT NULL,
+      max_price DECIMAL(10, 2) NOT NULL,
+      currency_code TEXT,
+      amount DECIMAL(10, 2) NOT NULL,
+      availability BOOLEAN,
+      total_inventory INT
     );
-      CREATE TABLE products (
-        id SERIAL PRIMARY KEY,
-        category TEXT,
-        brand TEXT,
-        name TEXT,
-        imageUrl TEXT,
-        description TEXT,
-        min_price DECIMAL(10, 2) NOT NULL,
-        max_price DECIMAL(10, 2) NOT NULL,
-        currency_code TEXT,
-        amount DECIMAL(10, 2) NOT NULL,
-        availability BOOLEAN,
-        total_inventory INT
-      );
-      CREATE TABLE billing_addresses (
-        id SERIAL PRIMARY KEY,
-        user_id INT NOT NULL,
-        street VARCHAR(255) NOT NULL,
-        city VARCHAR(255) NOT NULL,
-        state VARCHAR(255) NOT NULL,
-        postal_code VARCHAR(20) NOT NULL,
-        country VARCHAR(255) NOT NULL,
-        FOREIGN KEY (user_id) REFERENCES users(id)
-      );
-      CREATE TABLE user_billing_addresses (
-        id SERIAL PRIMARY KEY,
-        user_id INTEGER REFERENCES users(id),
-        billing_address_id INTEGER REFERENCES billing_addresses(id)
-      );  
-      CREATE TABLE shipping_addresses (
-        id SERIAL PRIMARY KEY,
-        user_id INT NOT NULL,
-        street VARCHAR(255) NOT NULL,
-        city VARCHAR(255) NOT NULL,
-        state VARCHAR(255) NOT NULL,
-        postal_code VARCHAR(20) NOT NULL,
-        country VARCHAR(255) NOT NULL,
-        FOREIGN KEY (user_id) REFERENCES users(id)
-      );
-      CREATE TABLE user_shipping_addresses (
-        id SERIAL PRIMARY KEY,
-        user_id INTEGER REFERENCES users(id),
-        shipping_address_id INTEGER REFERENCES shipping_addresses(id)
-      ); 
-      CREATE TABLE product_reviews (
-        id SERIAL PRIMARY KEY,
-        product_id INT NOT NULL,
-        user_id INT NOT NULL,
-        rating INT NOT NULL,
-        review_text TEXT,
-        review_date TIMESTAMP NOT NULL,
-        FOREIGN KEY (product_id) REFERENCES products(id),
-        FOREIGN KEY (user_id) REFERENCES users(id)
-      );
-      CREATE TABLE order_history (
-        id SERIAL PRIMARY KEY,
-        session_id UUID NOT NULL,
-        user_id INT NOT NULL,
-        order_date TIMESTAMP NOT NULL,
-        total_amount DECIMAL(10, 2) NOT NULL,
-        billing_address_id INT NOT NULL,
-        shipping_address_id INT NOT NULL,
-        order_products JSONB[] NOT NULL DEFAULT '{}',
-        FOREIGN KEY (user_id) REFERENCES users(id),
-        FOREIGN KEY (shipping_address_id) REFERENCES shipping_addresses(id),
-        FOREIGN KEY (billing_address_id) REFERENCES billing_addresses(id)
-      ); 
-      CREATE TABLE carts (
-        id SERIAL PRIMARY KEY,
-        user_id INT,
-        guest_id UUID,
-        FOREIGN KEY (user_id) REFERENCES users(id),
-        created_at TIMESTAMPTZ DEFAULT NOW(),
-        updated_at TIMESTAMPTZ DEFAULT NOW()
-      );
-      CREATE TABLE cart_items (
-        id SERIAL PRIMARY KEY,
-        user_id INT,
-        cart_id INT,
-        product_id INT,
-        quantity INT,
-        FOREIGN KEY (cart_id) REFERENCES carts(id) ON DELETE CASCADE,
-        FOREIGN KEY (product_id) REFERENCES products(id),
-        created_at TIMESTAMPTZ DEFAULT NOW(),
-        updated_at TIMESTAMPTZ DEFAULT NOW()
-      );
+    CREATE TABLE categories (
+      id SERIAL PRIMARY KEY,
+      name TEXT NOT NULL
+    );
+    CREATE TABLE billing_addresses (
+      id SERIAL PRIMARY KEY,
+      user_id INT NOT NULL,
+      street VARCHAR(255) NOT NULL,
+      city VARCHAR(255) NOT NULL,
+      state VARCHAR(255) NOT NULL,
+      postal_code VARCHAR(20) NOT NULL,
+      country VARCHAR(255) NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+    CREATE TABLE user_billing_addresses (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER REFERENCES users(id),
+      billing_address_id INTEGER REFERENCES billing_addresses(id)
+    );  
+    CREATE TABLE shipping_addresses (
+      id SERIAL PRIMARY KEY,
+      user_id INT NOT NULL,
+      street VARCHAR(255) NOT NULL,
+      city VARCHAR(255) NOT NULL,
+      state VARCHAR(255) NOT NULL,
+      postal_code VARCHAR(20) NOT NULL,
+      country VARCHAR(255) NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+    CREATE TABLE user_shipping_addresses (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER REFERENCES users(id),
+      shipping_address_id INTEGER REFERENCES shipping_addresses(id)
+    ); 
+    CREATE TABLE product_reviews (
+      id SERIAL PRIMARY KEY,
+      product_id INT NOT NULL,
+      user_id INT NOT NULL,
+      rating INT NOT NULL,
+      review_text TEXT,
+      review_date TIMESTAMP NOT NULL,
+      FOREIGN KEY (product_id) REFERENCES products(id),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+    CREATE TABLE order_history (
+      id SERIAL PRIMARY KEY,
+      session_id UUID NOT NULL,
+      user_id INT NOT NULL,
+      order_date TIMESTAMP NOT NULL,
+      total_amount DECIMAL(10, 2) NOT NULL,
+      billing_address_id INT NOT NULL,
+      shipping_address_id INT NOT NULL,
+      order_products JSONB[] NOT NULL DEFAULT '{}',
+      status TEXT NOT NULL, -- New column for order status
+      FOREIGN KEY (user_id) REFERENCES users(id),
+      FOREIGN KEY (shipping_address_id) REFERENCES shipping_addresses(id),
+      FOREIGN KEY (billing_address_id) REFERENCES billing_addresses(id)
+    );
+    CREATE TABLE carts (
+      id SERIAL PRIMARY KEY,
+      user_id INT,
+      guest_id UUID,
+      FOREIGN KEY (user_id) REFERENCES users(id),
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    );
+    CREATE TABLE cart_items (
+      id SERIAL PRIMARY KEY,
+      user_id INT,
+      cart_id INT,
+      product_id INT,
+      quantity INT,
+      FOREIGN KEY (cart_id) REFERENCES carts(id) ON DELETE CASCADE,
+      FOREIGN KEY (product_id) REFERENCES products(id),
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    );
   `);
     console.log("Finished creating table!");
   } catch (error) {

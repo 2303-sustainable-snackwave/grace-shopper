@@ -8,7 +8,7 @@ export const UserProvider = ({ children }) => {
   // Helper function to check if user is an admin update login component...
   // const { user, setUser, isAdmin } = useUser();
   const isAdmin = () => {
-    return user && user.role === "admin";
+    return user && user.is_admin;
   };
 
   return (

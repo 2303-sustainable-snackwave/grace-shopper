@@ -8,6 +8,7 @@ module.exports = {
     ...require('./orders'),
     ...require('./reviews'),
     ...require('./categories'),
+    ...require('./orderStatus'),
   };
   
 

@@ -26,9 +26,9 @@ router.use("/checkout", checkoutRouter);
 const cartRouter = require("./cart");
 router.use("/cart", cartRouter);
 
-// // ROUTER: /api/adminDashboard
-// const cartRouter = require("./adminDashboard");
-// router.use("/adminDashboard", cartRouter);
+// ROUTER: /api/adminDashboard
+const adminRouter = require("./adminDashboard");
+router.use("/adminDashboard", adminRouter);
 
 
 module.exports = router;

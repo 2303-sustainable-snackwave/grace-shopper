@@ -187,5 +187,4 @@ module.exports = {
   getAllProducts,
   updateProduct,
   destroyProduct,
-  createProductCategory
 };

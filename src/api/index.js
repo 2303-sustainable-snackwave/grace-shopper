@@ -2,6 +2,8 @@
 const BASE_URL = "http://localhost:3001/api/users";
 const PRODUCTS_BASE_URL = "http://localhost:3001/api/products"; 
 const ORDERS_BASE_URL = "http://localhost:3001/api/orders"; 
+const CARTS_BASE_URL = "http://localhost:3001/api/cart"; 
+const REVIEWS_BASE_URL = "http://localhost:3001/api/reviews"; 
 
 /* Will need the endpoints for reviews, cart, and checkout!! */
 
@@ -181,19 +183,22 @@ export const deleteProductFromCart = async (username, productId, token) => {
 
 // Fetch all products
 export const fetchAllProducts = async () => {
-    try {
-        const response = await fetch(PRODUCTS_BASE_URL, {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json",
-            },
-        });
-        const data = await response.json();
-        return data;
-    } catch (error) {
-        console.error("Error fetching all products:", error);
-        throw error;
+  try {
+    const response = await fetch(PRODUCTS_BASE_URL, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
     }
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching all products:", error);
+    throw error;
+  }
 };
 
 // Add a new product (admin action)
@@ -435,3 +440,97 @@ export const deleteReviewById = async (productId, reviewId) => {
     }
 };
 
+// Fetch a product by ID
+export const fetchProductById = async (productId) => {
+  try {
+    const response = await fetch(`${PRODUCTS_BASE_URL}/${productId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      return data;
+    } else {
+      throw new Error(data.message || 'Failed to fetch product');
+    }
+  } catch (error) {
+    console.error('Error fetching product by ID:', error);
+    throw error;
+  }
+};
+
+// Fetch cart items by cart ID
+export const getCartItemsByCartId = async (cartId) => {
+  try {
+    const response = await fetch(`${CARTS_BASE_URL}/${cartId}/items`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      return data;
+    } else {
+      throw new Error(data.message || 'Failed to fetch cart items');
+    }
+  } catch (error) {
+    console.error('Error fetching cart items by cart ID:', error);
+    throw error;
+  }
+};
+
+export const postReview = async (productId, userId, rating, reviewText) => {
+  try {
+    const response = await fetch(REVIEWS_BASE_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ productId, userId, rating, reviewText }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      return data;
+    } else {
+      throw new Error(data.message || 'Failed to post review');
+    }
+  } catch (error) {
+    console.error('Error posting review:', error);
+    throw error;
+  }
+};
+
+export const searchProducts = async (searchQuery) => {
+  try {
+    // Construct the URL with the search query as a query parameter
+    const url = new URL(`${PRODUCTS_BASE_URL}/search`);
+    url.searchParams.append('query', searchQuery);
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      return data;
+    } else {
+      throw new Error(data.message || 'Failed to search for products');
+    }
+  } catch (error) {
+    console.error('Error searching for products:', error);
+    throw error;
+  }
+};

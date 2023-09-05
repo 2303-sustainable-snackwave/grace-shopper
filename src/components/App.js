@@ -11,7 +11,10 @@ import {
   Cart,
   Search,
   Reviews,
-  Footer
+  Footer,
+  Home,
+  ProductDetail,
+  ProductListing
 } from  '../components';
 import { CartProvider } from '../CartContext';
 
@@ -22,12 +25,16 @@ function App() {
         <Router>
           <Navbar />
             <Routes>
-                <Route path='/register' element={<Register />} />
-                <Route path='/login' element={<Login />} />
-                <Route path='/profile' element={<Profile />} />
-                <Route path='/cart' element={<Cart />} />
-                <Route path='/users/:username/checkout' element={<UserCheckout />} />
-                <Route path='/reviews' element={<Reviews />} />
+              <Route path="/" element={<Home />} />
+              <Route path="/cart" element={<Cart />} />
+              <Route path="/product/:productId" element={<ProductDetail />} />
+              <Route path="/products" element={<ProductListing />} />
+              <Route path="/reviews/:productId" element={<Reviews />} />
+              <Route path="/search" element={<Search />} />
+              <Route path="/checkout" element={<UserCheckout />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/login" element={<Login />} />
             </Routes>
           <Footer />
         </Router>

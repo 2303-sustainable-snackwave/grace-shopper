@@ -1,5 +1,6 @@
 const {faker} = require('@faker-js/faker');
 const {createProducts, getAllProducts} = require('./models/products');
+const {createProductCategory} = require('./models/categories');
 const {createUser, getAllUsers, getUserById} = require('./models/users');
 const {createBillingAddress} = require('./models/billingAddress');
 const {createShippingAddress} = require('./models/shippingAddress');
@@ -47,6 +48,10 @@ async function createTables() {
       password VARCHAR(255) NOT NULL,
       is_admin BOOLEAN NOT NULL
     );
+    CREATE TABLE categories (
+      id SERIAL PRIMARY KEY,
+      name TEXT NOT NULL
+    );
     CREATE TABLE products (
       id SERIAL PRIMARY KEY,
       category_id INT REFERENCES categories(id),
@@ -60,10 +65,6 @@ async function createTables() {
       amount DECIMAL(10, 2) NOT NULL,
       availability BOOLEAN,
       total_inventory INT
-    );
-    CREATE TABLE categories (
-      id SERIAL PRIMARY KEY,
-      name TEXT NOT NULL
     );
     CREATE TABLE billing_addresses (
       id SERIAL PRIMARY KEY,
@@ -147,40 +148,44 @@ async function createTables() {
 }
 
 const bikeData = () => {
-    console.log("Generating bike data...");
-    const category = faker.vehicle.bicycle();
-    let name = "";
-    name = name + "" + faker.vehicle.model();
-    const minPrice = faker.number.float({
-        min: 500,
-        max: 20000,
-        precision: 0.01
-    });
-    const maxPrice = faker.number.float({
-        min: minPrice,
-        max: minPrice * 3,
-        precision: 0.01
-    });
+  console.log("Generating bike data...");
+  const categoryId = faker.number.int({ min: 1, max: 10 });
+  let name = "";
+  name = name + "" + faker.vehicle.model();
+  const minPrice = faker.number.float({
+    min: 500,
+    max: 20000,
+    precision: 0.01,
+  });
+  const maxPrice = faker.number.float({
+    min: minPrice,
+    max: minPrice * 3,
+    precision: 0.01,
+  });
 
-    return{
-       category: category,
-       brand: faker.vehicle.manufacturer(),
-       name: name, 
-       imageUrl: faker.image.urlLoremFlickr({ category: 'bicycle' }),
-       description: faker.lorem.paragraph(),
-       min_price: minPrice,
-       max_price: maxPrice,
-       currency_code: "USD",
-       amount: faker.number.float({
-        min: minPrice,
-        max: maxPrice,
-        precision: 0.01
-       }),
-       availability: faker.datatype.boolean(),
-       total_inventory: faker.number.int({ min: 1, max: 5 }),
-    }
-}
+  if (!minPrice || isNaN(minPrice)) {
+    // Ensure minPrice is a valid number
+    throw new Error("Invalid minPrice");
+  }
 
+  return {
+    category: categoryId,
+    brand: faker.vehicle.manufacturer(),
+    name: name,
+    imageUrl: faker.image.urlLoremFlickr({ category: 'bicycle' }),
+    description: faker.lorem.paragraph(),
+    min_price: minPrice,
+    max_price: maxPrice,
+    currency_code: "USD",
+    amount: faker.number.float({
+      min: minPrice,
+      max: maxPrice,
+      precision: 0.01,
+    }),
+    availability: faker.datatype.boolean(),
+    total_inventory: faker.number.int({ min: 1, max: 5 }),
+  };
+};
 
 async function fillDB(numSamples) {
   try {
@@ -236,27 +241,27 @@ async function createInitialUsers() {
 
       if (userData.billing_addresses && userData.billing_addresses.length > 0) {
         await Promise.all(userData.billing_addresses.map(async (billingAddress) => {
-          await createBillingAddress(
-            user.id,
-            billingAddress.street,
-            billingAddress.city,
-            billingAddress.state,
-            billingAddress.postalCode,
-            billingAddress.country
-          );
+          await createBillingAddress({
+            userId: user.id,
+            street: billingAddress.street,
+            city: billingAddress.city,
+            state: billingAddress.state,
+            postalCode: billingAddress.postalCode,
+            country: billingAddress.country
+          });
         }));
       }
 
       if (userData.shipping_addresses && userData.shipping_addresses.length > 0) {
         await Promise.all(userData.shipping_addresses.map(async (shippingAddress) => {
-          await createShippingAddress(
-            user.id,
-            shippingAddress.street,
-            shippingAddress.city,
-            shippingAddress.state,
-            shippingAddress.postalCode,
-            shippingAddress.country
-          );
+          await createShippingAddress({
+            userId: user.id,
+            street: shippingAddress.street,
+            city: shippingAddress.city,
+            state: shippingAddress.state,
+            postalCode: shippingAddress.postalCode,
+            country: shippingAddress.country
+          });
         }));
       }
 
@@ -418,10 +423,10 @@ async function rebuildDB() {
   try {
       await dropTables();
       await createTables();
-      await fillDB(10);
+      await fillDB(75);
       await createInitialUsers();
-      await fillProductReviews(10);
-      await fillOrderHistory(5);
+      await fillProductReviews(65);
+      await fillOrderHistory(100);
       await fillCarts(3);
       await fillCartProducts(5);
   }   catch(error) {

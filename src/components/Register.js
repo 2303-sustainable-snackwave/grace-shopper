@@ -1,62 +1,86 @@
 import React, { useState } from 'react';
+import { Link } from "react-router-dom";
 import { registerUser } from '../api';
 
-const Register = () => {
-    const [username, setUsername] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState(null);
-    const [success, setSuccess] = useState(false);
+const Register = ({setToken}) => {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [passConfirm, setPassConfirm] = useState('');
+  const [message, setMessage] = useState('');
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState(null);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            const result = await registerUser(username, password);
-            if (result.success) {
-                setSuccess(true);
-            } else {
-                setError(result.message || 'Unexpected error');
-            }
-        } catch (err) {
-            setError(err.message);
-        }
-    };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await registerUser(name, email, password, setToken, setMessage, setSuccess, setName, setEmail);
+      setName('');
+      setEmail('');
+      setPassword('');
+      setPassConfirm('');
+      setSuccess(true);
+      setMessage('Registration successful!');
+    } catch (error) {
+      setError(error.message || 'Registration failed.');
+    }
+  };
 
-    return (
-        <div className="register-container">
-            <h2>Register</h2>
-            {error && <div className="error-message">{error}</div>}
-            {success ? (
-                <div className="success-message">
-                    Registration successful! <a href="/login">Login here</a>.
-                </div>
-            ) : (
-                <form onSubmit={handleSubmit}>
-                    <div>
-                    { /* Endpoint is for username, but we should be using email for login. We'll have to further tweak this! */ }
-                        <label htmlFor="username">Username:</label>
-                        <input
-                            id="username"
-                            type="text"
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
-                            required
-                        />
-                    </div>
-                    <div>
-                        <label htmlFor="password">Password:</label>
-                        <input
-                            id="password"
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                        />
-                    </div>
-                    <button type="submit">Register</button>
-                </form>
-            )}
-        </div>
-    );
+  return (
+    <div className="register-container">
+        <h2>Register</h2>
+        {error && <div className="error-message">{error}</div>}
+        {success ? (
+            <div className="success-message">
+                Registration successful! <Link to="/login">Login here</Link>.
+            </div>
+        ) : (
+        <form onSubmit={handleSubmit}>
+          <div>
+            <label htmlFor="name">First and Last Name:</label>
+            <input
+              id="name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="email">Email:</label>
+            <input
+              id="email"
+              type="text"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="password">Password:</label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="passConfirm">Confirm Password:</label>
+            <input
+              id="passConfirm"
+              type="password"
+              value={passConfirm}
+              onChange={(e) => setPassConfirm(e.target.value)}
+              required
+            />
+          </div>
+          <button type="submit">Register</button>
+        </form>
+      )}
+    </div>
+  );
 };
 
 export default Register;

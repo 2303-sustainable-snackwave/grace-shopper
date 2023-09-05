@@ -17,7 +17,7 @@ const {
   deleteUser,
 } = require('../db/models/users')
 
-router.post('/register', async (req, res) => {
+router.post('/register', async (req, res, next) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {

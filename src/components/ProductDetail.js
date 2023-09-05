@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from "react";
+import { useParams } from 'react-router-dom';
 import { fetchProductById } from "../api"; // Need the API call!
 
 const ProductDetail = (props) => {
   const [product, setProduct] = useState(null);
   const [error, setError] = useState(null);
 
-  const { productId } = props.match.params; // Product detail is coming from the URL / make sure route is correct!
-
+  const { productId } = useParams(); // Product detail is coming from the URL / make sure route is correct!
+  console.log(productId);
   useEffect(() => {
     async function loadProduct() {
       try {
         const fetchedProduct = await fetchProductById(productId);
+        console.log(fetchedProduct);
         setProduct(fetchedProduct);
       } catch (err) {
         setError("Error loading product details");
@@ -29,6 +31,10 @@ const ProductDetail = (props) => {
           src={product.imageUrl}
           alt={product.name}
           className="card-img-top"
+          onError={(e) => {
+          e.target.onerror = null;
+          e.target.src = '/path/to/default/image.jpg';
+          }}
         />
         <div className="card-body">
           <h5 className="card-title">{product.name}</h5>

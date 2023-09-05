@@ -2,7 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import Search from './Search';
 
-const Navbar = () => {
+const Navbar = ({ token }) => {
   return (
     <nav className="navbar navbar-expand-lg navbar-light custom-navbar-background">
       <span className="navbar-text custom-navbar-text">Cycle's-R-Us</span>
@@ -13,21 +13,23 @@ const Navbar = () => {
               Home
             </Link>
           </li>
-          <li className="nav-item">
-            <Link className="nav-link" to="/login">
-              Login
-            </Link>
-          </li>
-          <li className="nav-item">
-            <Link className="nav-link" to="/register">
-              Register
-            </Link>
-          </li>
-          <li className="nav-item">
-            <Link className="nav-link" to="/profile">
-              Profile
-            </Link>
-          </li>
+          {!token && (
+            <>
+              <li className="nav-item">
+                <Link className="nav-link" to="/login">Login</Link>
+              </li>
+              <li className="nav-item">
+                <Link className="nav-link" to="/register">Register</Link>
+              </li>
+            </>
+          )}
+          {token && (
+            <>
+              <li className="nav-item">
+                <Link className="nav-link" to="/profile">Profile</Link>
+              </li>
+            </>
+          )}
           <li className="nav-item">
             <Link className="nav-link" to="/users/johndoe/checkout">
               Checkout

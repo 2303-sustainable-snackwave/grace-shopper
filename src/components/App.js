@@ -15,7 +15,8 @@ import {
   Footer,
   Home,
   ProductDetail,
-  ProductListing
+  ProductListing,
+  AdminDashboard,
 } from  '../components';
 import { CartProvider } from '../CartContext';
 
@@ -54,6 +55,7 @@ function App() {
               <Route path="/search" element={<Search />} />
               <Route path="/checkout" element={<UserCheckout token={token}/>} />
               <Route path="/profile" element={<Profile token={token}/>} />
+              <Route path="/admindash" element={<AdminDashboard token={token}/>} />
               <Route path="/register" element={<Register setToken={setAndStoreToken}/>} />
               <Route path="/login" element={<Login setToken={setAndStoreToken}/>} />
             </Routes>

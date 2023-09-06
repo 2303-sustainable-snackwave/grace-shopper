@@ -1,13 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import {
-  getProducts,
-  createProduct,
-  deleteProduct,
-  getCategories,
-  createCategory,
-  deleteCategory,
-  getUsers,
-  promoteUser,
+  addProduct,
+  updateProductById,
+  deleteProductById,
+  updateUser,
   deleteUser,
 } from '../api';
 

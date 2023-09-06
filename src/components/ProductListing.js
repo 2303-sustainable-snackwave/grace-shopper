@@ -5,6 +5,7 @@ import { fetchAllProducts } from '../api';
 const ProductListing = () => {
     const [products, setProducts] = useState([]);
     const [error, setError] = useState(null);
+    const [selectedCategory, setSelectedCategory] = useState("");
 
     useEffect(() => {
         async function loadProducts() {
@@ -19,12 +20,34 @@ const ProductListing = () => {
         loadProducts();
     }, []);
 
+    // Extract unique category names from products
+    const categoryOptions = Array.from(new Set(products.map(product => product.category)));
+
+    // Filter products based on the selected category
+    const filteredProducts = selectedCategory
+        ? products.filter(product => product.category === selectedCategory)
+        : products;
+
     return (
         <div className="container mt-4">
             <h2 className="mb-4">Products</h2>
             {error && <div className="alert alert-danger">{error}</div>}
+            <div>
+                {/* Category filter dropdown */}
+                <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                >
+                    <option value="">All Categories</option>
+                    {categoryOptions.map((categoryName, index) => (
+                        <option key={index} value={categoryName}>
+                            {categoryName}
+                        </option>
+                    ))}
+                </select>
+            </div>
             <div className="row">
-                {products.map(product => (
+                {filteredProducts.map(product => (
                     <div key={product.id} className="col-lg-4 col-md-6 mb-4">
                         <div className="card h-100">
                             <Link to={`/products/${product.id}`}>

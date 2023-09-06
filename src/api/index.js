@@ -72,20 +72,31 @@ export const loginUser = async (email, password) => {
 };
 
 // Fetch current user's info
-export const fetchCurrentUser = async (token, setName, setEmail) => {
+export const fetchCurrentUser = async (token) => {
   try {
     const response = await fetch(`${BASE_URL}/me`, {
+      method: "GET",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`,
       },
     });
-    const data = await response.json();
-    setName(data.name);
-    setEmail(data.email);
-    return data;
+    // Check if the response status is okay (200)
+    if (!response.ok) {
+      // Handle the error here (e.g., throw an error or return an error message)
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    // Parse the response as JSON
+    const currentUser = await response.json();
+
+    // Return the current user's data
+    return currentUser;
   } catch (error) {
-    console.error("Fetch Error:", error);
+    // Handle any errors that occur during the fetch operation
+    console.error("Error fetching current user:", error);
+
+    // Optionally, you can throw the error to be handled elsewhere
     throw error;
   }
 };
@@ -469,7 +480,6 @@ export const fetchReviewsByProductId = async (productId) => {
     }
 };
 
-
 // Add a review to a product
 export const addReviewToProduct = async (productId, reviewData, token) => {
     try {
@@ -492,7 +502,6 @@ export const addReviewToProduct = async (productId, reviewData, token) => {
         throw error;
     }
 };
-
 
 //Update a reivew by ID
 export const updateReviewById = async (productId, reviewId, content) => {

@@ -3,3 +3,4 @@ build
 .env
 package-lock.json
 package.json
+.DS_Store

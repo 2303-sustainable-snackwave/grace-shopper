@@ -1,6 +1,5 @@
 const {faker} = require('@faker-js/faker');
 const {createProducts, getAllProducts} = require('./models/products');
-const {createProductCategory} = require('./models/categories');
 const {createUser, getAllUsers, getUserById} = require('./models/users');
 const {createBillingAddress} = require('./models/billingAddress');
 const {createShippingAddress} = require('./models/shippingAddress');
@@ -48,13 +47,9 @@ async function createTables() {
       password VARCHAR(255) NOT NULL,
       is_admin BOOLEAN NOT NULL
     );
-    CREATE TABLE categories (
-      id SERIAL PRIMARY KEY,
-      name TEXT NOT NULL
-    );
     CREATE TABLE products (
       id SERIAL PRIMARY KEY,
-      category_id INT REFERENCES categories(id),
+      category TEXT,
       brand TEXT,
       name TEXT,
       imageUrl TEXT,
@@ -65,7 +60,7 @@ async function createTables() {
       amount DECIMAL(10, 2) NOT NULL,
       availability BOOLEAN,
       total_inventory INT
-    );
+    );   
     CREATE TABLE billing_addresses (
       id SERIAL PRIMARY KEY,
       user_id INT NOT NULL,
@@ -147,16 +142,33 @@ async function createTables() {
   }
 }
 
+const categoryNames = [
+  'Road Bicycle',
+  'Fitness Bicycle',
+  'City Bicycle',
+  'Track/Fixed-Gear Bicycle',
+  'Dual-Sport Bicycle',
+  'Touring Bicycle',
+  'Mountain Bicycle',
+  'Hybrid Bicycle',
+  'Cruiser Bicycle',
+  'BMX Bicycle',
+];
+
 const bikeData = () => {
   console.log("Generating bike data...");
-  const categoryId = faker.number.int({ min: 1, max: 10 });
+
+  const categoryName = faker.helpers.arrayElement(categoryNames);
+
   let name = "";
   name = name + "" + faker.vehicle.model();
+
   const minPrice = faker.number.float({
     min: 500,
     max: 20000,
     precision: 0.01,
   });
+
   const maxPrice = faker.number.float({
     min: minPrice,
     max: minPrice * 3,
@@ -169,7 +181,7 @@ const bikeData = () => {
   }
 
   return {
-    category: categoryId,
+    category: categoryName, // Use categoryName for the category name
     brand: faker.vehicle.manufacturer(),
     name: name,
     imageUrl: faker.image.urlLoremFlickr({ category: 'bicycle' }),
@@ -198,7 +210,7 @@ async function fillDB(numSamples) {
 
     console.log("Finished filling database!");
   } catch (error) {
-    console.error("Error filling database!");
+    console.error("Error filling database:", error);
     throw error;
   }
 }

@@ -1,7 +1,7 @@
 const client = require("../client");
 
 async function createProducts({
-  categoryId,
+  category,
   brand,
   name,
   imageUrl,
@@ -17,21 +17,23 @@ try {
   const {
     rows: [product],
   } = await client.query(
-    ` INSERT INTO products(category_id,
-      brand,
-      name,
-      imageUrl,
-      description,
-      min_price,
-      max_price,
-      currency_code,
-      amount,
-      availability,
-      total_inventory )
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-          RETURNING *;
-          `,
-    [categoryId,
+    ` 
+    INSERT INTO products(
+    category,
+    brand,
+    name,
+    imageUrl,
+    description,
+    min_price,
+    max_price,
+    currency_code,
+    amount,
+    availability,
+    total_inventory )
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+    RETURNING *;
+    `,
+    [category,
       brand,
       name,
       imageUrl,
@@ -179,6 +181,21 @@ async function destroyProduct(id) {
   }
 }
 
+async function searchProducts(query) {
+  try {
+      const { rows: products } = await client.query(`
+          SELECT p.*
+          FROM products p
+          WHERE p.name ILIKE $1
+          OR p.description ILIKE $1
+          OR p.brand ILIKE $1;
+      `, [`%${query}%`]);
+
+      return products;
+  } catch (error) {
+      throw new Error('Could not search products: ' + error.message);
+  }
+}
 
 module.exports = {
   createProducts,
@@ -187,4 +204,5 @@ module.exports = {
   getAllProducts,
   updateProduct,
   destroyProduct,
+  searchProducts
 };

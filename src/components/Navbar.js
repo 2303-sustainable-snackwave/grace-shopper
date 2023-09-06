@@ -1,8 +1,24 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Search from "./Search";
+import { fetchCurrentUser } from '../api';
 
 const Navbar = ({ token, logout }) => {
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    // Fetch the current user's information and set the isAdmin state
+    if (token) {
+      fetchCurrentUser(token)
+        .then((currentUser) => {
+          setIsAdmin(currentUser.is_admin);
+        })
+        .catch((error) => {
+          console.error("Error fetching current user:", error);
+        });
+    }
+  }, [token]);
+
   return (
     <nav className="navbar navbar-expand-lg navbar-light custom-navbar-background">
       <span className="navbar-text custom-navbar-text">Cycle's-R-Us</span>
@@ -43,6 +59,13 @@ const Navbar = ({ token, logout }) => {
                   Logout
                 </a>
               </li>
+              {isAdmin && (
+                <li className="nav-item">
+                  <Link className="nav-link" to="/admindash">
+                    Admin Dash
+                  </Link>
+                </li>
+              )}
             </>
           )}
           <li className="nav-item">

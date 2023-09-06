@@ -53,6 +53,8 @@ async function getBillingAddressByUserId(userId) {
     const { rows } = await client.query(query, [userId]);
     return rows;
   } catch (error) {
+    console.error('Error fetching billing addresses:', error);
+
     throw new Error('Could not get billing addresses: ' + error.message);
   }
 }

@@ -13,8 +13,21 @@ export function CartProvider({ children }) {
         setCartItems(prevItems => prevItems.filter(item => item.id !== itemId));
     };
 
+    const fetchAndSetCartItems = async (userId, token) => {
+        try {
+            const userCart = await fetchUserCart(userId, token); // Ensure fetchUserCart is imported or available in this scope
+            if (userCart && userCart.cart) {
+                setCartItems(userCart.cart.items);
+            } else {
+                setCartItems([]);
+            }
+        } catch (error) {
+            console.error("Error fetching cart items:", error);
+        }
+    };
+
     return (
-        <CartContext.Provider value={{ cartItems, addToCart, removeFromCart }}>
+        <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, fetchAndSetCartItems }}>
             {children}
         </CartContext.Provider>
     );

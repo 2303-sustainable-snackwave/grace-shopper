@@ -87,7 +87,7 @@ async function getUserById(userId) {
       rows: [user],
     } = await client.query(
       `
-      SELECT id, name, password, email, is_admin
+      SELECT *
       FROM users
       WHERE id = $1
       `,
@@ -105,7 +105,7 @@ async function getUserById(userId) {
     user.shipping_addresses = await getShippingAddressByUserId(userId);
 
     delete user.password;
-
+    console.log("user data", user);
     return user;
   } catch (error) {
     // Log an error message with details

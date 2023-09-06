@@ -11,3 +11,4 @@ export { default as ProductDetail } from './ProductDetail.js';
 export { default as ProductListing } from './ProductListing.js';
 export { default as Reviews } from './Reviews.js';
 export { default as Search } from './Search.js';
+export { default as AdminDashboard } from './AdminDashboard.js';

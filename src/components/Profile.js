@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { fetchCurrentUser, fetchUserCheckout } from '../api'; 
 
-const Profile = () => {
+const Profile = ({ token, logout }) => {
     const [user, setUser] = useState(null);
     const [checkoutDetails, setCheckoutDetails] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const token = "YOUR_TOKEN"; // This should be dynamically set! From localStorage!!! Temporary build!
 
     useEffect(() => {
         const fetchProfileData = async () => {
@@ -32,7 +31,6 @@ const Profile = () => {
             <h2>User Profile</h2>
             {user && (
                 <>
-                    <img src={user.profilePicture} alt="User Profile" />
                     <div>
                         <strong>Name:</strong> {user.name}
                     </div>
@@ -52,7 +50,7 @@ const Profile = () => {
                     </div>
                 </div>
             )}
-            <button onClick={() => { /* Handle logout or profile update? I'm leaving this is for further development */ }}>Logout or Update Profile</button>
+            {logout && <button onClick={logout}>Logout</button>}
         </div>
     );
 };

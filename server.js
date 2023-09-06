@@ -3,7 +3,7 @@ const http = require("http")
 const chalk = require("chalk")
 const app = require("./app")
 
-const PORT = process.env["PORT"] || 3000
+const PORT = process.env.PORT || 3001
 const server = http.createServer(app)
 
 server.listen(PORT, () => {
@@ -13,3 +13,4 @@ server.listen(PORT, () => {
     chalk.blueBright("Get your Bike on!")
   )
 })
+

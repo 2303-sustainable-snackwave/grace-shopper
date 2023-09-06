@@ -137,8 +137,8 @@ describe("Billing and Shipping Address Functions", () => {
     });
   });
 
-  xdescribe("getShippingAddressByUserId", () => {
-    it("should get shipping addresses by user ID", async () => {
+  describe("getShippingAddressByUserId", () => {
+    xit("should get shipping addresses by user ID", async () => {
       const shippingAddresses = await getShippingAddressByUserId(testUserId);
 
       expect(shippingAddresses).toBeDefined();

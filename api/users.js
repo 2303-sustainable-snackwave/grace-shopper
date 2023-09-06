@@ -2,36 +2,28 @@ const express = require("express");
 const router = express.Router();
 const bcrypt = require('bcrypt');
 const { validationResult } = require('express-validator');
-const jwt = require("jsonwebtoken");
-require("dotenv").config();
+const { verifyToken, generateToken, isAuthorizedToUpdate, isAdminOrOwner} = require('./authMiddleware');
+const { 
+  UserError,
+  RegistrationError,
+  AuthenticationError,
+  PermissionError
+} = require('../errors');
 const {
   createUser,
-  getAllUsers,
   getUserById,
-  getUserByName,
   getUserByEmail,
   updateUser,
   deleteUser,
 } = require('../db/models/users')
-/* 
-    Waiting on db/checkout 
 
-    const {
-    getAllCheckoutByUser
-    getPublicCheckoutByUser
-    } = require('../db/models/checkout')
-} */
-
-// POST /api/users/register
-
-router.post('/register', async (req, res) => {
+router.post('/register', async (req, res, next) => {
+  const { name, email, password } = req.body;
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-
-    const { name, email, password } = req.body;
       const userExists = await getUserByEmail(email);
       if (userExists) {
         return res.status(409).json({
@@ -47,10 +39,8 @@ router.post('/register', async (req, res) => {
           name: 'UserPasswordError'
         });
       }
-      
-    const hashedPassword = await bcrypt.hash(password, 10);
 
-    const newUser = await createUser({ name, email, password: hashedPassword });
+    const newUser = await createUser({ name, email, password });
     const token = generateToken(newUser.id, newUser.email);
     res.status(201).json({
       message: "Thank you for signing up",
@@ -70,9 +60,10 @@ router.post('/register', async (req, res) => {
 // POST /api/users/login
 
 router.post('/login', async (req, res, next) => {
+  const { email, password } = req.body;
   try {
-    const { email, password } = req.body;
     const user = await getUserByEmail(email);
+    console.log('User Object:', user);
     if (!user) {
       return res.status(401).json({
           error: 'Email not found.',
@@ -80,8 +71,11 @@ router.post('/login', async (req, res, next) => {
           name: 'EmailNotFoundError'
       });
     }
+    console.log('Provided Password:', password);
+    console.log('Stored Hashed Password:', user.password);
     const passwordMatch = await bcrypt.compare(password, user.password);
-     if (!passwordMatch) {
+    console.log('Password Match:', passwordMatch);
+         if (!passwordMatch) {
       return res.status(401).json({
         error: 'Invalid credentials',
         message: 'Invalid email or password',
@@ -107,21 +101,26 @@ router.post('/login', async (req, res, next) => {
 // GET /api/users/me
 router.get("/me", verifyToken, async (req, res, next) => {
   try {
-
     if (!req.user) {
       throw new AuthenticationError('You must be logged in to perform this action.');
     }
 
-    const user = await getUserById(req.user.userId);
+    const user = await getUserById(req.user.id);
 
     if (!user) {
       throw new AuthenticationError('User not found.');
     }
 
-    delete user.password;
-
     res.json({ user });
   } catch (error) {
+    // console.error('Error in /api/users/me:', error);
+
+    if (error instanceof AuthenticationError) {
+      // Handle authentication-related errors (e.g., token validation)
+      return res.status(401).json({ error: error.message });
+    }
+
+    // Handle other errors (e.g., database errors)
     next(new UserError('There was an error finding user.'));
   }
 });

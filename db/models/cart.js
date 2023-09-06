@@ -107,7 +107,7 @@ async function getCartByUserId(userId) {
   }
 }
 
-async function getCartByGuestId(userId) {
+async function getCartByGuestId(guestId) {
   try {
     const query = `
       SELECT *
@@ -190,6 +190,32 @@ async function getCartItemById(cartItemId) {
   }
 }
 
+async function getCartTotalAmount({ userId, guestId }) {
+  try {
+    // Determine the appropriate cart identifier based on whether it's a user or guest
+    const cartIdentifier = userId ? { column: 'user_id', value: userId } : { column: 'guest_id', value: guestId };
+
+    const query = `
+      SELECT SUM(ci.quantity * p.amount) AS total_amount
+      FROM cart_items ci
+      INNER JOIN products p ON ci.product_id = p.id
+      INNER JOIN carts c ON ci.cart_id = c.id
+      WHERE c.${cartIdentifier.column} = $1;
+    `;
+
+    const values = [cartIdentifier.value];
+    const result = await client.query(query, values);
+
+    // Extract the total amount from the result
+    const totalAmount = parseFloat(result.rows[0].total_amount) || 0;
+
+    return totalAmount;
+  } catch (error) {
+    throw new Error('Could not calculate cart total amount: ' + error.message);
+  }
+}
+
+
 module.exports = {
     createCart,
     addItemToCart,
@@ -199,5 +225,6 @@ module.exports = {
     getCartItemsByCartId,
     getCartById,
     getCartItemById,
-    getCartByGuestId
+    getCartByGuestId,
+    getCartTotalAmount
 }

@@ -98,6 +98,9 @@ async function getUserById(userId) {
       return null;
     }
 
+    // Log a success message with user details
+    console.log('User retrieved successfully:', user);
+
     user.billing_addresses = await getBillingAddressByUserId(userId);
     user.shipping_addresses = await getShippingAddressByUserId(userId);
 
@@ -105,6 +108,10 @@ async function getUserById(userId) {
 
     return user;
   } catch (error) {
+    // Log an error message with details
+    console.error('Error while getting user:', error);
+
+    // Rethrow the error with a custom message
     throw new Error('Could not get user: ' + error.message);
   }
 }
@@ -148,8 +155,6 @@ async function getUserByEmail(email) {
     if (!user) {
       return null;
     }
-
-    delete user.password;
     
     return user;
   } catch (error) {
@@ -159,7 +164,7 @@ async function getUserByEmail(email) {
 
 async function updateUser({ userId, updatedFields }) {
   try {
-    const { name, email, password } = updatedFields;
+    const { name, email, password, isAdmin } = updatedFields;
 
     const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
 
@@ -173,6 +178,11 @@ async function updateUser({ userId, updatedFields }) {
     if (hashedPassword) {
       query += ', password = $3';
       values.push(hashedPassword);
+    }
+
+    if (isAdmin !== undefined) {
+      query += ', is_admin = $4';
+      values.push(isAdmin);
     }
 
     query += `

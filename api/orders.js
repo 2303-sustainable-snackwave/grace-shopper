@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const { verifyToken, isAuthorizedToUpdate, isAdmin} = require('./authMiddleware');
+const { 
+  OrderHistoryError,
+} = require('../errors');
 const {
   getOrderByUserId,
   getOrderHistoryForProduct,

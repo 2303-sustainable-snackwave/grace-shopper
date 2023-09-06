@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+const { v4: uuidv4 } = require('uuid');
 const { 
   PermissionError,
   TokenVerificationError,
@@ -10,19 +11,30 @@ function generateToken(userId, email) {
   return jwt.sign({ userId, email }, process.env.JWT_SECRET, { expiresIn: '1w' });
 }
 
+function generateGuestId() {
+  // Generate a UUID (Version 4)
+  return uuidv4();
+}
+
 function verifyToken(req, res, next) {
   const token = req.headers.authorization?.split(" ")[1];
-  
+
+  console.log("Received Token:", token);
+
   if (token) {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      console.log("Decoded Token:", decoded);
       req.user = decoded;
     } catch (error) {
-      throw new TokenVerificationError('Invalid token');
+      console.error("Token Verification Error:", error);
+      next(new TokenVerificationError('Invalid token'));
     }
+  } else {
+    console.log("No Token Provided");
+    // ... (rest of your code)
   }
 
-  // Allow guests to proceed without token
   next();
 }
 
@@ -71,15 +83,20 @@ function isAuthorizedToUpdate(req, res, next) {
 
 function isAdminOrOwner(req, res, next) {
   if (req.user && (req.user.is_admin || req.user.userId === req.params.userId)) {
-    // User is an admin or is the owner of the profile, allow access
     next();
   } else {
-    // User is not authorized, send a forbidden response
-    throw new PermissionError('You do not have permission to access this feature.');
+    next(new PermissionError('You do not have permission to access this feature.'));
   }
 }
 
-module.exports = isAdmin;
+function isAdmin(req, res, next) {
+  console.log('isAdmin middleware - User:', req.user);
+  if (req?.user?.is_admin) {
+    next();
+  } else {
+    next(new AdminPermissionError('You do not have permission to access this feature.'));
+  }
+}
 
 module.exports = { 
   verifyToken,

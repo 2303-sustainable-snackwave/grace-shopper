@@ -1,3 +1,4 @@
+require('dotenv').config()
 const { createTables, dropTables } = require('../db/seedData');
 
 const setup = async () => {

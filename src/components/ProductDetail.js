@@ -71,6 +71,13 @@ const ProductDetail = ({ token, userId, guestId }) => {
     }
   };
 
+  useEffect(() => {
+    document.body.classList.add("hide-footer");
+    return () => {
+      document.body.classList.remove("hide-footer");
+    };
+  }, []);
+
   if (!product)
     return (
       <div className="d-flex justify-content-center mt-5">
@@ -81,98 +88,92 @@ const ProductDetail = ({ token, userId, guestId }) => {
     );
 
   return (
-    <div
-      style={{ marginBottom: "10px", marginTop: "5%" }}
-      className="container"
-    >
-      <div
-        className="card"
-        style={{
-          boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-          border: "1px solid #e0e0e0",
-          borderRadius: "10px",
-          marginBottom: "2%",
-        }}
-      >
-        <img
-          src={product.imageurl}
-          alt={product.name}
-          className="card-img-top"
-          onClick={() => setShowModal(true)}
-          onError={(e) => {
-            e.target.onerror = null;
-            e.target.src = "/path/to/default/image.jpg";
-          }}
-          style={{ padding: "10px", borderRadius: "10px" }}
-        />
-        <div className="card-body">
-          <h5 className="card-title">{product.name}</h5>
-          <p className="card-text">{product.description}</p>
-          <ul className="list-group list-group-flush">
-            <li className="list-group-item">Price: ${product.amount}</li>
-            <li className="list-group-item">
-              Available: {product.isAvailable ? "Yes" : "No"}
-            </li>
-            <li className="list-group-item">Category: {product.category}</li>
-            <li className="list-group-item">Brand: {product.brand}</li>
-          </ul>
-          <div className="mt-3">
-            <label htmlFor="quantity">Quantity:</label>
-            <input
-              type="number"
-              id="quantity"
-              name="quantity"
-              value={quantity}
-              onChange={handleQuantityChange}
-              min="1"
-              style={{ marginLeft: "10px" }}
-            />
-          </div>
-          <button
-            className="btn btn-primary mt-3"
-            onClick={() => handleAddToCart(userId, guestId, product.id, token)}
-            style={{ marginRight: "10px" }}
-          >
-            Add to Cart
-          </button>
-          {error && <p className="text-danger mt-3">{error}</p>}
-        </div>
-      </div>
-      <button
-        className="btn btn-primary mt-5"
-        onClick={handleBackClick}
-        style={{ marginRight: "10px" }}
-      >
-        Back to Product Listing
-      </button>
-      <div
-        className={`modal ${showModal ? "show" : ""}`}
-        tabIndex="-1"
-        style={{ display: showModal ? "block" : "none" }}
-      >
-        <div className="modal-dialog modal-lg">
-          <div className="modal-content">
-            <div className="modal-body">
-              <img
-                src={product.imageurl}
-                alt={product.name}
-                className="img-fluid"
+    <>
+      <style>
+        {`
+        .hide-footer footer {
+          display: none;
+        }
+      `}
+      </style>
+
+      <div style={{ marginBottom: "10px" }} className="container mt-5">
+        <div className="card">
+          <img
+            src={product.imageurl}
+            alt={product.name}
+            className="card-img-top"
+            onClick={() => setShowModal(true)}
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = "/path/to/default/image.jpg";
+            }}
+          />
+          <div className="card-body">
+            <h5 className="card-title">{product.name}</h5>
+            <p className="card-text">{product.description}</p>
+            <ul className="list-group list-group-flush">
+              <li className="list-group-item">Price: ${product.amount}</li>
+              <li className="list-group-item">
+                Available: {product.isAvailable ? "Yes" : "No"}
+              </li>
+              <li className="list-group-item">Category: {product.category}</li>
+              <li className="list-group-item">Brand: {product.brand}</li>
+            </ul>
+            <div className="mt-3">
+              <label htmlFor="quantity">Quantity:</label>
+              <input
+                type="number"
+                id="quantity"
+                name="quantity"
+                value={quantity}
+                onChange={handleQuantityChange}
+                min="1"
               />
             </div>
-            <div className="modal-footer">
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => setShowModal(false)}
-              >
-                Close
-              </button>
+            <button
+              className="btn btn-primary mt-3"
+              onClick={() =>
+                handleAddToCart(userId, guestId, product.id, token)
+              }
+            >
+              Add to Cart
+            </button>
+            {error && <p className="text-danger mt-3">{error}</p>}
+          </div>
+        </div>
+        <button className="btn btn-primary mt-5" onClick={handleBackClick}>
+          Back to Product Listing
+        </button>
+        <div
+          className={`modal ${showModal ? "show" : ""}`}
+          tabIndex="-1"
+          style={{ display: showModal ? "block" : "none" }}
+        >
+          <div className="modal-dialog modal-lg">
+            <div className="modal-content">
+              <div className="modal-body">
+                <img
+                  src={product.imageurl}
+                  alt={product.name}
+                  className="img-fluid"
+                />
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowModal(false)}
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>
+        {showModal && <div className="modal-backdrop show"></div>}
       </div>
-      {showModal && <div className="modal-backdrop show"></div>}
-    </div>
+    </>
   );
 };
 

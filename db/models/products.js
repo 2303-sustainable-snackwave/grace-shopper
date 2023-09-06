@@ -194,8 +194,6 @@ async function searchProducts(query) {
   }
 }
 
-
-
 module.exports = {
   createProducts,
   getProductById,

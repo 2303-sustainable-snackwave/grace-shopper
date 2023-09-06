@@ -1,29 +1,6 @@
-require("dotenv").config();
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const jwt = require("jsonwebtoken");
 
-// ROUTER: /api
-router.get("/", async (req, res, next) => {
-  try {
-    res.send({
-      message: "API is under construction!",
-    });
-  } catch (error) {
-    next(error);
-  }
-});
-
-// GET /api/health
-router.get("/health", async (req, res, next) => {
-  try {
-    res.send({
-      message: "Server is healthy!",
-    });
-  } catch (error) {
-    next(error);
-  }
-});
 
 // ROUTER: /api/users
 const usersRouter = require("./users");
@@ -48,5 +25,10 @@ router.use("/checkout", checkoutRouter);
 // ROUTER: /api/cart
 const cartRouter = require("./cart");
 router.use("/cart", cartRouter);
+
+// ROUTER: /api/adminDashboard
+const adminRouter = require("./adminDashboard");
+router.use("/adminDashboard", adminRouter);
+
 
 module.exports = router;

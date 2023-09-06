@@ -16,11 +16,11 @@ async function createUser({ name, email, password,
 
     const { rows: [user] } = await client.query(
       `
-      INSERT INTO users (name, email, password, role)
+      INSERT INTO users (name, email, password, is_admin)
       VALUES ($1, $2, $3, $4)
       RETURNING *;
       `,
-      [name, email, hashedPassword, 'user']
+      [name, email, hashedPassword, false]
     );
 
     delete user.password;
@@ -87,7 +87,7 @@ async function getUserById(userId) {
       rows: [user],
     } = await client.query(
       `
-      SELECT id, name, password, email, role
+      SELECT *
       FROM users
       WHERE id = $1
       `,
@@ -98,13 +98,20 @@ async function getUserById(userId) {
       return null;
     }
 
+    // Log a success message with user details
+    console.log('User retrieved successfully:', user);
+
     user.billing_addresses = await getBillingAddressByUserId(userId);
     user.shipping_addresses = await getShippingAddressByUserId(userId);
 
     delete user.password;
-
+    console.log("user data", user);
     return user;
   } catch (error) {
+    // Log an error message with details
+    console.error('Error while getting user:', error);
+
+    // Rethrow the error with a custom message
     throw new Error('Could not get user: ' + error.message);
   }
 }
@@ -148,8 +155,6 @@ async function getUserByEmail(email) {
     if (!user) {
       return null;
     }
-
-    delete user.password;
     
     return user;
   } catch (error) {
@@ -157,20 +162,9 @@ async function getUserByEmail(email) {
   }
 }
 
-async function updateUser(userId, updatedFields, requestingUserRole) {
+async function updateUser({ userId, updatedFields }) {
   try {
-    const { name, email, password, role } = updatedFields;
-
-    if (requestingUserRole !== 'admin' && userId !== updatedFields.userId) {
-      throw new Error('You do not have permission to update this user.');
-    }
-
-    if (email) {
-      const existingUser = await getUserByEmail(email);
-      if (existingUser && existingUser.id !== userId) {
-        throw new Error('Email already exists for another user.');
-      }
-    }
+    const { name, email, password, isAdmin } = updatedFields;
 
     const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
 
@@ -186,9 +180,9 @@ async function updateUser(userId, updatedFields, requestingUserRole) {
       values.push(hashedPassword);
     }
 
-    if (requestingUserRole === 'admin') {
-      query += ', role = $' + (values.length + 1);
-      values.push(role);
+    if (isAdmin !== undefined) {
+      query += ', is_admin = $4';
+      values.push(isAdmin);
     }
 
     query += `
@@ -210,72 +204,27 @@ async function updateUser(userId, updatedFields, requestingUserRole) {
   }
 }
 
-async function deleteUser(userId, requestingUserRole) {
+async function deleteUser(userId) {
   try {
-    if (requestingUserRole !== 'admin') {
-      throw new Error('Only admin users can delete users.');
-    }
-
-    const billingAddressesResult = await client.query(
-      `
-      SELECT id
-      FROM billing_addresses
-      WHERE user_id = $1
-      `,
-      [userId]
-    );
-
-    if (billingAddressesResult.rows.length > 0) {
-      for (const billingAddress of billingAddressesResult.rows) {
-        await client.query(
-          `
-          DELETE FROM billing_addresses
-          WHERE id = $1
-          `,
-          [billingAddress.id]
-        );
-      }
-    }
-
-    const shippingAddressesResult = await client.query(
-      `
-      SELECT id
-      FROM shipping_addresses
-      WHERE user_id = $1
-      `,
-      [userId]
-    );
-
-    if (shippingAddressesResult.rows.length > 0) {
-      for (const shippingAddress of shippingAddressesResult.rows) {
-        await client.query(
-          `
-          DELETE FROM shipping_addresses
-          WHERE id = $1
-          `,
-          [shippingAddress.id]
-        );
-      }
-    }
-
-    const result = await client.query(
-      `
+    const query = `
       DELETE FROM users
       WHERE id = $1
-      `,
-      [userId]
-    );
+      RETURNING *;
+    `;
 
-    if (result.rowCount === 0) {
+    const { rows: [deletedUser] } = await client.query(query, [userId]);
+
+    if (!deletedUser) {
       throw new Error(`User with ID ${userId} not found.`);
     }
 
-    return true;
+    delete deletedUser.password;
+
+    return deletedUser;
   } catch (error) {
     throw new Error('Could not delete user: ' + error.message);
   }
 }
-
 
 module.exports = {
   createUser,

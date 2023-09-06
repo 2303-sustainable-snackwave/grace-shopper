@@ -1,199 +1,148 @@
 const express = require('express');
-const jwt = require("jsonwebtoken");
 const router = express.Router();
+const { verifyToken, checkCartPermission } = require('./authMiddleware');
+const { 
+  CartError,
+  CartValidationFailedError
+} = require('../errors');
 const {
     createCart,
     addItemToCart,
     updateCartItemQuantity,
     removeItemFromCart,
     getCartItemsByCartId,
-    getCartById,
-    getCartItemById
+    getCartItemById,
+    getCartByUserId,
+    getCartByGuestId
 } = require("../db/models/cart");
 
-// Middleware to verify JWT token
-function verifyToken(req, res, next) {
-  const token = req.header('Authorization');
-  
-  // Check if token is present
-  if (token) {
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      req.user = decoded;
-    } catch (error) {
-      return res.status(400).json({ error: 'Invalid token.' });
-    }
-  }
-
-  // Allow guests to proceed without token
-  next();
-}
-
 router.use(verifyToken);
+router.use(checkCartPermission);
 
 // Create a new cart for a user (both guest and logged-in)
-router.post('/', verifyToken, async (req, res, next) => {
+router.post('/cart', async (req, res, next) => {
   try {
-    const { userId, guestId } = req.body;
-    const cartId = await createCart(userId, guestId);
+    const { userId, guestId } = req.user;
+    const cartId = await createCart({ userId, guestId });
     res.json({ cartId });
   } catch (error) {
-    next(error);
+    next(new CartError('There was an error creating cart'));
   }
 });
 
-// Add an item to the cart
-router.post('/:cartId/items', verifyToken, async (req, res, next) => {
+// Add an item to the cart route with combined permission check
+router.post('/cart/items', async (req, res, next) => {
   try {
-    const { userId, guestId } = req.body;
-    const { cartId } = req.params;
-
-    // If a userId is provided, it's a guest-to-logged-in-user transition
-    if (userId) {
-      const cart = await getCartById(cartId);
-      if (cart.user_id !== userId) {
-        res.status(403).json({ message: 'You do not have permission to update this cart item.' });
-        return;
-      }
-    } else if (guestId) {
-      const cart = await getCartById(cartId);
-      if (cart.guest_id !== guestId) {
-        res.status(403).json({ message: 'You do not have permission to update this cart item.' });
-        return;
-      }
-    }
-
+    const { userId, guestId } = req.user;
     const { productId, quantity } = req.body;
-    const cartItemId = await addItemToCart(userId, guestId, cartId, productId, quantity, guestId);
+
+    const cartId = userId ? await getCartByUserId(userId).id : guestId;
+
+    const cartItemId = await addItemToCart({ userId, guestId, cartId, productId, quantity });
     res.json({ cartItemId });
   } catch (error) {
-    next(error);
+    next(new CartError('There was an error adding an item to the cart.'));
   }
 });
 
 // Update the quantity of a cart item
-router.put('/:cartId/items/:cartItemId', verifyToken, async (req, res, next) => {
+router.put('/cart/items/:cartItemId', async (req, res, next) => {
   try {
-    const { userId, guestId } = req.body;
-    const { cartItemId } = req.params;
+    const { userId, guestId } = req.user;
     const { newQuantity } = req.body;
+    const { cartItemId } = req.params;
 
-    const cartItem = await getCartItemById(cartItemId);
-
-    if (userId) {
-      const cart = await getCartById(cartItem.cart_id);
-      if (cart.user_id !== userId) {
-        res.status(403).json({ message: 'You do not have permission to update this cart item.' });
-        return;
-      }
-    } else if (guestId) {
-      const cart = await getCartById(cartItem.cart_id);
-      if (cart.guest_id !== guestId) {
-        res.status(403).json({ message: 'You do not have permission to update this cart item.' });
-        return;
-      }
+    if (typeof newQuantity !== 'number' || newQuantity < 0) {
+      next(new CartValidationFailedError('Invalid quantity value.'));
     }
 
-    await updateCartItemQuantity(userId, guestId, cartItemId, newQuantity);
-    res.json({ message: 'Cart item quantity updated successfully.' });
+    const updatedCartItem = await updateCartItemQuantity({
+      userId,
+      guestId,
+      cartItemId,
+      newQuantity,
+    });
+
+    res.json({ updatedCartItem });
   } catch (error) {
-    next(error);
+    next(new CartError('There was an error updating the cart item quantity.'));
   }
 });
 
 // Remove a cart item
-router.delete('/items/:cartItemId', verifyToken, async (req, res, next) => {
+router.delete('/cart/items/:cartItemId', async (req, res, next) => {
   try {
-    const { userId, guestId } = req.body;
     const { cartItemId } = req.params;
 
-    const cartItem = await getCartItemById(cartItemId);
+    const removedCartId = await removeItemFromCart(cartItemId);
 
-    if (userId) {
-      const cart = await getCartById(cartItem.cart_id);
-      if (cart.user_id !== userId) {
-        res.status(403).json({ message: 'You do not have permission to remove this cart item.' });
-        return;
-      }
-    } else if (guestId) {
-      const cart = await getCartById(cartItem.cart_id);
-      if (cart.guest_id !== guestId) {
-        res.status(403).json({ message: 'You do not have permission to update this cart item.' });
-        return;
-      }
+    if (!removedCartId) {
+      next(new CartError('Item could not be found in the cart.'));
     }
 
-    await removeItemFromCart(userId, guestId, cartItemId);
     res.json({ message: 'Cart item removed successfully.' });
   } catch (error) {
-    next(error);
+    next(new CartError('There was an error removing the cart item.'));
   }
 });
 
-// Get all cart items for a given cart ID
-router.get('/:cartId/items', async (req, res, next) => {
+// Retrieve all cart items for a given cart
+router.get('/cart/items/:cartId', async (req, res, next) => {
   try {
     const { cartId } = req.params;
+
     const cartItems = await getCartItemsByCartId(cartId);
-    res.json(cartItems);
+
+    if (!cartItems) {
+      next(new CartError('No cart items found for the given cart ID.'));
+    }
+
+    res.json({ cartItems });
   } catch (error) {
-    next(error);
+    next(new CartError('There was an error retrieving cart items.'));
   }
 });
 
-// Get cart information by cart ID
-router.get('/:cartId', async (req, res, next) => {
-  const { userId, guestId } = req.body;
-  const { cartId } = req.params;
-
+// Retrieve the user's cart
+router.get('/cart', async (req, res, next) => {
   try {
-    if (userId) {
-      const cart = await getCartById(cartId);
-      if (cart.user_id !== userId) {
-        res.status(403).json({ message: 'You do not have permission to access this cart.' });
-        return;
-      }
-    } else if (guestId) {
-      const cart = await getCartById(cartId);
-      if (cart.guest_id !== guestId) {
-        res.status(403).json({ message: 'You do not have permission to access this cart.' });
-        return;
-      }
+    const { userId, guestId } = req.user;
+    console.log('Request received for user ID:', userId, 'guest ID:', guestId);
+
+    const cart = userId
+      ? await getCartByUserId(userId)
+      : await getCartByGuestId(guestId);
+
+    if (!cart) {
+      console.log('Cart not found.');
+      next(new CartError('Cart not found.'));
     }
 
-    const cartItems = await getCartItemsByCartId(cartId);
-    res.json(cartItems);
+    const cartItems = await getCartItemsByCartId(cart.id);
+    console.log('Cart data:', cart);
+    console.log('Cart items:', cartItems);
+
+    res.json({ cart, cartItems });
   } catch (error) {
-    next(error);
+    console.error('Error in /api/cart route:', error);
+    next(new CartError('There was an error retrieving the cart.'));
   }
 });
 
 // Get cart item information by cart item ID
-router.get('/:cartId/items/:cartItemId', async (req, res, next) => {
-  const { userId, guestId } = req.body;
-  const { cartItemId } = req.params;
-
+router.get('/cart/items/:cartItemId', async (req, res, next) => {
   try {
-    if (userId) {
-      const cartItem = await getCartItemById(cartItemId);
-      const cart = await getCartById(cartItem.cart_id);
-      if (cart.user_id !== userId) {
-        res.status(403).json({ message: 'You do not have permission to access this cart item.' });
-        return;
-      }
-    } else if (guestId) {
-      const cartItem = await getCartItemById(cartItemId);
-      const cart = await getCartById(cartItem.cart_id);
-      if (cart.guest_id !== guestId) {
-        res.status(403).json({ message: 'You do not have permission to access this cart item.' });
-        return;
-      }
-    }
+    const { cartItemId } = req.params;
 
     const cartItem = await getCartItemById(cartItemId);
-    res.json(cartItem);
+
+    if (!cartItem) {
+      next(new CartError('Cart item not found.'));
+    }
+
+    res.json({ cartItem });
   } catch (error) {
-    next(error);
+    next(new CartError('There was an error retrieving cart item details.'));
   }
 });
 

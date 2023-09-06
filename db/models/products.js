@@ -1,8 +1,24 @@
 const client = require("../client");
 
-// Updated
-
 async function createProducts({
+  category,
+  brand,
+  name,
+  imageUrl,
+  description,
+  min_price,
+  max_price,
+  currency_code,
+  amount,
+  availability,
+  total_inventory,
+}) {
+try {
+  const {
+    rows: [product],
+  } = await client.query(
+    ` 
+    INSERT INTO products(
     category,
     brand,
     name,
@@ -13,45 +29,26 @@ async function createProducts({
     currency_code,
     amount,
     availability,
-    total_inventory,
-}, requestingUserRole) {
-  try {
-    if (requestingUserRole !== "admin") {
-      throw new Error("Only admin users can create products.");
-    }
-    const {
-      rows: [products],
-    } = await client.query(
-      ` INSERT INTO products(category,
-        brand,
-        name,
-        imageUrl,
-        description,
-        min_price,
-        max_price,
-        currency_code,
-        amount,
-        availability,
-        total_inventory )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-            RETURNING *;
-            `,
-      [category,
-        brand,
-        name,
-        imageUrl,
-        description,
-        min_price,
-        max_price,
-        currency_code,
-        amount,
-        availability,
-        total_inventory]
-    );
-    return products;
-  } catch (error) {
-    throw new Error('Could not create product: ' + error.message);
-  }
+    total_inventory )
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+    RETURNING *;
+    `,
+    [category,
+      brand,
+      name,
+      imageUrl,
+      description,
+      min_price,
+      max_price,
+      currency_code,
+      amount,
+      availability,
+      total_inventory]
+  );
+  return product;
+} catch (error) {
+  throw new Error('Could not create product: ' + error.message);
+}
 }
 
 async function getProductById(id) {
@@ -107,25 +104,12 @@ async function getAllProducts() {
   }
 }
 
-// async function getAllProductsByOrders({ orders }) {
-//   // Needs to built out after orders
-//   try {
-//   } catch (error) {}
-// }
-
-// async function getProductsByOrdered({ id }) {
-//   // fleshout after db/orders.js
-//   try {
-//   } catch (error) {}
-// }
-
-async function updateProduct(productId, updatedFields, requestingUserRole) {
+async function updateProduct({productId, updatedFields}) {
   try {
-    const { 
-      category, 
+    const {  
       brand, 
       name, 
-      image_url, 
+      imageUrl, 
       description , 
       min_price, 
       max_price, 
@@ -134,10 +118,6 @@ async function updateProduct(productId, updatedFields, requestingUserRole) {
       availability,
       total_inventory     
     } = updatedFields;
-
-    if (requestingUserRole !== 'admin') {
-      throw new Error('Only admin users can update products.');
-    }
 
     const existingProduct = await getProductById(productId);
     if (!existingProduct) {
@@ -167,40 +147,54 @@ async function updateProduct(productId, updatedFields, requestingUserRole) {
   }
 }
 
-async function destroyProduct(id, requestingUserRole) {
+async function destroyProduct(id) {
   try {
-    if (requestingUserRole !== "admin") {
-      throw new Error("Only admin users can delete products.");
-    }
     const deletedProduct = await getProductById(id);
 
-      if (!deletedProduct) {
-            return null;
-      }
+    if (!deletedProduct) {
+      return null;
+    }
 
-      // await client.query(
-      //   `
-      //   DELETE FROM product_orders
-      //   WHERE "productId" = $1
-      //   `,
-      //   [id]
-      // );
+    await client.query(
+      `
+      DELETE FROM order_history
+      WHERE $1 = ANY(order_products)
+      `,
+      [id]
+    );
 
-      const { rowCount } = await client.query(
-        `
-        DELETE FROM products
-        WHERE id = $1
-        `,
-        [id]
-      );
+    const { rowCount } = await client.query(
+      `
+      DELETE FROM products
+      WHERE id = $1
+      `,
+      [id]
+    );
 
-      if (rowCount === 0) {
-        return null;
-      }
+    if (rowCount === 0) {
+      return null;
+    }
 
     return deletedProduct;
   } catch (error) {
     throw new Error('Could not delete product: ' + error.message);
+  }
+}
+
+async function searchProducts(query) {
+  try {
+      const { rows: products } = await client.query(`
+          SELECT p.*
+          FROM products p
+          WHERE p.category IKIKE $1
+          or p.name ILIKE $1
+          OR p.description ILIKE $1
+          OR p.brand ILIKE $1;
+      `, [`%${query}%`]);
+
+      return products;
+  } catch (error) {
+      throw new Error('Could not search products: ' + error.message);
   }
 }
 
@@ -210,5 +204,6 @@ module.exports = {
   getProductsWithoutOrders,
   getAllProducts,
   updateProduct,
-  destroyProduct
+  destroyProduct,
+  searchProducts
 };

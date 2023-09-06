@@ -1,6 +1,6 @@
 const client = require("../client");
 
-async function createBillingAddress(userId, street, city, state, postalCode, country) {
+async function createBillingAddress({userId, street, city, state, postalCode, country}) {
     try {
       const result = await client.query(
         `
@@ -17,7 +17,7 @@ async function createBillingAddress(userId, street, city, state, postalCode, cou
     }
 }
 
-async function addBillingAddressToUser(userId, billingAddressList) {
+async function addBillingAddressToUser({userId, billingAddressList}) {
   try {    
     const createdBillingAddresses = [];
     for (const billingAddress of billingAddressList) {
@@ -53,11 +53,13 @@ async function getBillingAddressByUserId(userId) {
     const { rows } = await client.query(query, [userId]);
     return rows;
   } catch (error) {
+    console.error('Error fetching billing addresses:', error);
+
     throw new Error('Could not get billing addresses: ' + error.message);
   }
 }
 
-async function updateUserBillingAddress(userId, addressId, updatedAddressData) {
+async function updateUserBillingAddress({userId, addressId, updatedAddressData}) {
   try {
     const { street, city, state, postalCode, country } = updatedAddressData;
 
@@ -78,27 +80,24 @@ async function updateUserBillingAddress(userId, addressId, updatedAddressData) {
 
     return updatedBillingAddress;
   } catch (error) {
+    console.error('Error in updateUserBillingAddress:', error);
     throw new Error('Could not update billing address: ' + error.message);
   }
 }
 
-async function deleteBillingAddress(userId, addressId) {
+async function deleteBillingAddress(addressId) {
   try {
-    const billingAddress = await client.query(
+    const billingAddressInfo = await client.query(
       `
-      SELECT user_id, billing_address_id
+      SELECT billing_address_id, user_id
       FROM user_billing_addresses
       WHERE id = $1
       `,
       [addressId]
     );
 
-    if (!billingAddress || billingAddress.rows.length === 0) {
+    if (!billingAddressInfo || billingAddressInfo.rows.length === 0) {
       throw new Error(`Billing address with ID ${addressId} not found.`);
-    }
-
-    if (billingAddress.rows[0].user_id !== userId) {
-      throw new Error('You do not have permission to delete this billing address.');
     }
 
     await client.query(
@@ -114,10 +113,10 @@ async function deleteBillingAddress(userId, addressId) {
       DELETE FROM billing_addresses
       WHERE id = $1
       `,
-      [billingAddress.rows[0].billing_address_id]
+      [billingAddressInfo.rows[0].billing_address_id]
     );
 
-    return true;
+    return true; 
   } catch (error) {
     throw new Error('Could not delete billing address: ' + error.message);
   }

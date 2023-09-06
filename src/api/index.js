@@ -41,29 +41,34 @@ export const registerUser = async (
     return result;
   } catch (err) {
     console.error(err);
+    setError('Registration failed. Please try again.');
   }
 };
 
 // Login a user
-export const loginUser = async (email, password) => {
-    try {
-        const response = await fetch(`${BASE_URL}/login`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ email, password }),
-        });
-        const data = await response.json();
-        if (response.ok) {
-            return data;
-        } else {
-            throw new Error(data.message);
-        }
-    } catch (error) {
-        console.error("Error logging in user:", error);
-        throw error;
+export const loginUser = async (email, password, setToken, setMessage) => {
+  try {
+    const response = await fetch(`${BASE_URL}/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: email,
+        password: password
+      }),
+    });
+    const result = await response.json();
+    console.log(result);
+    if (result.token) {
+      setUser(result.user.username)
     }
+    setToken(result.token);
+    setMessage(result.message);
+  } catch (error) {
+    console.error(error);
+    throw new Error('Login failed. Please try again.'); 
+  }
 };
 
 // Fetch current user's info

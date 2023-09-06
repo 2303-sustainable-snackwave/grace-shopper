@@ -1,45 +1,47 @@
 import React, { useState } from 'react';
+import { Link, useNavigate } from "react-router-dom";
 import { loginUser } from '../api';
 
-const Login = () => {
-  const [credentials, setCredentials] = useState({
-    email: '',
-    password: ''
-  });
+const Login = ({setToken}) => {
+  const navigate = useNavigate();
+  const [message, setMessage] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setCredentials(prevState => ({
-      ...prevState,
-      [name]: value
-    }));
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await loginUser(credentials);
-      
-    } catch (err) {
-      setError(err.message);
-    }
+      await loginUser(email, password, setToken, setMessage);
+      setEmail("");
+      setPassword("");
+      navigate("/products");
+    } catch (error) {
+      setError(error.message || 'Login failed.');    }
   };
+
 
   return (
     <div className="login-container">
       <h2>Login</h2>
-      {error && <p className="error">{error}</p>}
+      <p className = "form-text">
+        New User? Register <Link to="/register">here</Link>
+      </p>
+     
       <form onSubmit={handleSubmit}>
         <div className="input-group">
           <label htmlFor="email">Email</label>
           <input
             type="email"
+            required
             id="email"
             name="email"
-            value={credentials.email}
-            onChange={handleChange}
-            required
+            value={email}
+            placeholder="Enter your username"
+            minLength="8"
+            maxLength="20"
+            onChange={(e) => setEmail(e.target.value)}
           />
         </div>
         <div className="input-group">
@@ -48,13 +50,17 @@ const Login = () => {
             type="password"
             id="password"
             name="password"
-            value={credentials.password}
-            onChange={handleChange}
+            value={password}
+            placeholder="Enter your password"
+            minLength="8"
+            maxLength="20"
+            onChange={(e) => setPassword(e.target.value)}
             required
           />
         </div>
         <button type="submit">Login</button>
       </form>
+      {message ? <p>{message}</p> : null}
     </div>
   );
 };

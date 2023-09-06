@@ -14,28 +14,24 @@ const Register = ({setToken}) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await registerUser(name, email, password, setToken, setMessage, setSuccess, setName, setEmail);
+      await registerUser(name, email, password, setToken, setMessage, setSuccess, setName, setEmail, setError);
       setName('');
       setEmail('');
       setPassword('');
       setPassConfirm('');
-      setSuccess(true);
-      setMessage('Registration successful!');
     } catch (error) {
       setError(error.message || 'Registration failed.');
     }
   };
 
   return (
-    <div className="register-container">
-        <h2>Register</h2>
-        {error && <div className="error-message">{error}</div>}
-        {success ? (
-            <div className="success-message">
-                Registration successful! <Link to="/login">Login here</Link>.
-            </div>
-        ) : (
-        <form onSubmit={handleSubmit}>
+    <div className="login-form">
+      <h2>Create an Account</h2>
+      <p className = "form-text">
+        Already a user? Click <Link to="/login">here</Link>
+      </p>
+
+        <form onSubmit={handleSubmit} className="login-form">
           <div>
             <label htmlFor="name">First and Last Name:</label>
             <input
@@ -77,8 +73,9 @@ const Register = ({setToken}) => {
             />
           </div>
           <button type="submit">Register</button>
+          {password !== passConfirm ? <p>Passwords do not match</p> : null}
         </form>
-      )}
+        {message ? <p>{message}</p> : null}
     </div>
   );
 };

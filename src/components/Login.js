@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { loginUser } from '../api';
+import { loginUser } from "../api";
 
 const Login = ({ setToken }) => {
   const navigate = useNavigate();
@@ -8,16 +8,21 @@ const Login = ({ setToken }) => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
 
+  const inputStyles = {
+    width: "100%",
+    boxSizing: "border-box",
+    padding: "10px",
+    marginBottom: "10px"
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const token = await loginUser(email, password);
-      // If login is successful, set the token and navigate to "/products"
       setToken(token);
       navigate("/products");
     } catch (error) {
-      // Handle login failure by displaying an error message
-      setError('Login failed. Please check your credentials.');
+      setError("Login failed. Please check your credentials.");
     }
   };
 
@@ -27,12 +32,14 @@ const Login = ({ setToken }) => {
       <p className="form-text">
         New User? Register <Link to="/register">here</Link>
       </p>
-
+  
       <form onSubmit={handleSubmit}>
-        <div className="input-group">
+        <div className="form-group">
           <label htmlFor="email">Email</label>
           <input
+            style={inputStyles}
             type="email"
+            className="form-control"
             required
             id="email"
             name="email"
@@ -41,10 +48,12 @@ const Login = ({ setToken }) => {
             onChange={(e) => setEmail(e.target.value)}
           />
         </div>
-        <div className="input-group">
+        <div className="form-group">
           <label htmlFor="password">Password</label>
           <input
+            style={inputStyles}
             type="password"
+            className="form-control"
             id="password"
             name="password"
             value={password}
@@ -53,7 +62,7 @@ const Login = ({ setToken }) => {
             required
           />
         </div>
-        <button type="submit">Login</button>
+        <button type="submit" className="btn btn-primary">Login</button>
       </form>
       {error && <p className="error-message">{error}</p>}
     </div>
@@ -61,6 +70,3 @@ const Login = ({ setToken }) => {
 };
 
 export default Login;
-
-
-

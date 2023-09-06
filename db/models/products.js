@@ -186,8 +186,7 @@ async function searchProducts(query) {
       const { rows: products } = await client.query(`
           SELECT p.*
           FROM products p
-          WHERE p.category IKIKE $1
-          or p.name ILIKE $1
+          WHERE p.name ILIKE $1
           OR p.description ILIKE $1
           OR p.brand ILIKE $1;
       `, [`%${query}%`]);

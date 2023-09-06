@@ -7,6 +7,8 @@ const ProductDetail = ({ token }) => {
   const [error, setError] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [showModal, setShowModal] = useState(false);
+  const [userId, setUserId] = useState(null);
+  const [guestId, setGuestId] = useState(null);
 
   const navigate = useNavigate();
   const { productId } = useParams();
@@ -34,6 +36,7 @@ const ProductDetail = ({ token }) => {
   };
 
   const handleAddToCart = async (userId, guestId, productId, token) => {
+    console.log("UserId:", userId);
     try {
       if (userId) {
         const userCart = await fetchUserCart(userId, token);
@@ -100,8 +103,8 @@ const ProductDetail = ({ token }) => {
           </div>
           <button
             className="btn btn-primary mt-3"
-            onClick={handleAddToCart}
-          >
+            onClick={() => handleAddToCart(userId, guestId, product.id, token)}
+            >
             Add to Cart
           </button>
           {error && <p className="text-danger mt-3">{error}</p>}

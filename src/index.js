@@ -5,4 +5,8 @@ import { App } from './components';
 // place them in the src/style directory, and import them like this:
 import './style/index.css';
 
-ReactDOM.render(<App />, document.getElementById('root'));
+// ReactDOM.render(<App />, document.getElementById('app'));
+// ^ That would probably work, but... We're using react and not axios so...
+
+const root = createRoot(document.getElementById('app'));
+root.render(<App />);

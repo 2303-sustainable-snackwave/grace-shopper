@@ -182,10 +182,13 @@ async function destroyProduct(id) {
 async function searchProducts(query) {
   try {
       const { rows: products } = await client.query(`
-          SELECT *
-          FROM products
-          WHERE name ILIKE $1
-          OR description ILIKE $1;
+          SELECT p.*
+          FROM products p
+          LEFT JOIN categories c ON p.category_id = c.id
+          WHERE p.name ILIKE $1
+          OR p.description ILIKE $1
+          OR p.brand ILIKE $1
+          OR c.name ILIKE $1;
       `, [`%${query}%`]);
 
       return products;

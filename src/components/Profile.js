@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { fetchCurrentUser, fetchUserCheckout } from '../api'; 
 
-const Profile = ({ token, logout }) => {
+const Profile = ({ token }) => {
     const [user, setUser] = useState(null);
+    const [email, setEmail] = useState("");
     const [checkoutDetails, setCheckoutDetails] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -10,10 +11,10 @@ const Profile = ({ token, logout }) => {
     useEffect(() => {
         const fetchProfileData = async () => {
             try {
-                const profile = await fetchCurrentUser(token);
+                const profile = await fetchCurrentUser(token, setEmail);
                 setUser(profile);
-                const userCheckout = await fetchUserCheckout(profile.username, token);
-                setCheckoutDetails(userCheckout);
+                // const userCheckout = await fetchUserCheckout(profile.name, token);
+                // setCheckoutDetails(userCheckout);
             } catch (err) {
                 setError(err.message);
             } finally {
@@ -50,7 +51,6 @@ const Profile = ({ token, logout }) => {
                     </div>
                 </div>
             )}
-            {logout && <button onClick={logout}>Logout</button>}
         </div>
     );
 };

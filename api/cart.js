@@ -107,19 +107,24 @@ router.get('/cart/items/:cartId', async (req, res, next) => {
 router.get('/cart', async (req, res, next) => {
   try {
     const { userId, guestId } = req.user;
+    console.log('Request received for user ID:', userId, 'guest ID:', guestId);
 
     const cart = userId
       ? await getCartByUserId(userId)
       : await getCartByGuestId(guestId);
 
     if (!cart) {
+      console.log('Cart not found.');
       next(new CartError('Cart not found.'));
     }
 
     const cartItems = await getCartItemsByCartId(cart.id);
+    console.log('Cart data:', cart);
+    console.log('Cart items:', cartItems);
 
     res.json({ cart, cartItems });
   } catch (error) {
+    console.error('Error in /api/cart route:', error);
     next(new CartError('There was an error retrieving the cart.'));
   }
 });

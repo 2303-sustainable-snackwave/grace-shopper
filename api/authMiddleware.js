@@ -19,21 +19,22 @@ function generateGuestId() {
 function verifyToken(req, res, next) {
   const token = req.headers.authorization?.split(" ")[1];
 
+  console.log("Received Token:", token);
+
   if (token) {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      console.log("Decoded Token:", decoded);
       req.user = decoded;
     } catch (error) {
+      console.error("Token Verification Error:", error);
       next(new TokenVerificationError('Invalid token'));
     }
   } else {
-    // If there is no token, generate a guest ID and assign it to the user
-    req.user = {
-      guestId: generateGuestId(),
-    };
+    console.log("No Token Provided");
+    // ... (rest of your code)
   }
 
-  // Allow guests to proceed without token
   next();
 }
 

@@ -32,9 +32,6 @@ const ProductListing = () => {
                                 <img className="card-img-top" src={product.image} alt={product.name} />
                             </Link>
                             <div className="card-body">
-                                <h4 className="card-title">
-                                    <Link to={`/products/${product.id}`}>{product.name}</Link>
-                                </h4>
                                 {/* We can adjust the list order in final build */}
                                 <p className="card-text">{product.description}</p>
                                 <p className="card-text">Price: ${product.price}</p>

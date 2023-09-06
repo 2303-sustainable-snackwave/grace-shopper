@@ -98,6 +98,9 @@ async function getUserById(userId) {
       return null;
     }
 
+    // Log a success message with user details
+    console.log('User retrieved successfully:', user);
+
     user.billing_addresses = await getBillingAddressByUserId(userId);
     user.shipping_addresses = await getShippingAddressByUserId(userId);
 
@@ -105,6 +108,10 @@ async function getUserById(userId) {
 
     return user;
   } catch (error) {
+    // Log an error message with details
+    console.error('Error while getting user:', error);
+
+    // Rethrow the error with a custom message
     throw new Error('Could not get user: ' + error.message);
   }
 }

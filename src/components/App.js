@@ -46,7 +46,7 @@ function App() {
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/cart" element={<Cart token={token}/>} />
-              <Route path="/products/:productId" element={<ProductDetail />} />
+              <Route path="/products/:productId" element={<ProductDetail token={token} />} />
               <Route path="/products" element={<ProductListing />} />
               <Route path="/reviews/:productId" element={<Reviews />} />
               <Route path="/search" element={<Search />} />

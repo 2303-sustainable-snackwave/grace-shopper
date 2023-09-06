@@ -72,24 +72,21 @@ export const loginUser = async (email, password, setToken, setMessage, setEmail)
 };
 
 // Fetch current user's info
-export const fetchCurrentUser = async (token) => {
-    try {
-        const response = await fetch(`${BASE_URL}/me`, {
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}`,
-            },
-        });
-        const data = await response.json();
-        if (response.ok) {
-            return data;
-        } else {
-            throw new Error(data.message);
-        }
-    } catch (error) {
-        console.error("Error fetching current user:", error);
-        throw error;
-    }
+export const fetchCurrentUser = async (token, setEmail) => {
+  try {
+    const response = await fetch(`${BASE_URL}/me`, {
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+    const data = await response.json();
+    setEmail(data.email)
+    return data;
+  } catch (error) {
+    console.error("Fetch Error:", error);
+    throw error;
+  }
 };
 
 // Fetch a user's checkout details
@@ -113,31 +110,77 @@ export const fetchUserCheckout = async (userId, token) => {
     }
 };
 
-//Fetch a user's cart
-export const fetchUserCart = async (userId, token) => {
-    try{
-        const response = await fetch(`${BASE_URL}/${userId}/cart`,{
-            headers:{
+// Helper function to create a cart for a user (both guest and logged-in)
+export const createCart = async (userId, guestId, token) => {
+  try {
+    const response = await fetch(`${CARTS_BASE_URL}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ userId, guestId }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      return data; 
+    } else {
+      throw new Error(data.message);
+    }
+  } catch (error) {
+    throw new Error(`Error creating cart: ${error.message}`);
+  }
+};
+
+// Fetch a user's cart (for both logged-in and guest users)
+export const fetchUserCart = async (userId, guestId, token) => {
+    try {
+        let apiUrl = `${CARTS_BASE_URL}/`; // Note the trailing slash added here
+        
+        // If a userId is provided, it means the user is logged in
+        if (userId) {
+            apiUrl += `user/${userId}`; // Append the user's ID to the URL for logged-in users
+        } else if (guestId) {
+            apiUrl += `guest/${guestId}`; // Append the guest's ID to the URL for guest users
+        }
+        
+        const response = await fetch(apiUrl, {
+            headers: {
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${token}`,
             },
         });
+        console.log('API URL:', apiUrl); // Log the constructed URL
+        console.log('Response from fetchUserCart:', response);
+
         const data = await response.json();
+
         if (response.ok) {
             return data;
         } else {
             throw new Error(data.message);
         }
     } catch (error) {
-        console.error("Error fetching user cart:", error);
+        console.error('Error in fetchUserCart:', error);
         throw error;
     }
-}
+};
 
-// Add a product to the user's cart
-export const addProductToCart = async (userId, productId, token) => {
+// Add a product to the user's cart (for both logged-in and guest users)
+export const addProductToCart = async (userId, guestId, productId, token) => {
     try {
-        const response = await fetch(`${BASE_URL}/${userId}/cart`, {
+        let apiUrl = `${CARTS_BASE_URL}/items`; // Base URL for adding items to the cart
+        
+        // Determine whether the user is logged in or a guest
+        if (userId) {
+            apiUrl += `/${userId}/user`; // Append the user's ID to the URL for logged-in users
+        } else if (guestId) {
+            apiUrl += `/${guestId}/guest`; // Append the guest's ID to the URL for guest users
+        }
+        
+        const response = await fetch(apiUrl, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -145,7 +188,9 @@ export const addProductToCart = async (userId, productId, token) => {
             },
             body: JSON.stringify({ productId }),
         });
+        
         const data = await response.json();
+        
         if (response.ok) {
             return data;
         } else {
@@ -157,43 +202,65 @@ export const addProductToCart = async (userId, productId, token) => {
     }
 };
 
-//Update a product in cart by ID
-export const updateProductInCart = async (userId, productId, number ) => {
+// Update the quantity of a product in the user's cart (for both logged-in and guest users)
+export const updateProductInCart = async (userId, guestId, productId, number, token) => {
     try {
-        const response = await fetch(`${BASE_URL}/${userId}/cart/${productId}`, {
+        let apiUrl = `${CARTS_BASE_URL}/items/${productId}`; // Base URL for updating cart items
+        
+        // Determine whether the user is logged in or a guest
+        if (userId) {
+            apiUrl += `/${userId}/user`; // Append the user's ID to the URL for logged-in users
+        } else if (guestId) {
+            apiUrl += `/${guestId}/guest`; // Append the guest's ID to the URL for guest users
+        }
+        
+        const response = await fetch(apiUrl, {
             method: "PATCH",
             headers: {
                 "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`,
             },
             body: JSON.stringify({ number }),
         });
+        
         const data = await response.json();
+        
         if (response.ok) {
             return data;
         } else {
             throw new Error(data.error);
         }
     } catch (error) {
-        console.error("Error updating review:", error);
+        console.error("Error updating product in cart:", error);
         throw error;
     }
 };
 
-// Delete a product from the user's cart
-export const deleteProductFromCart = async (userId, productId, token) => {
+// Delete a product from the user's cart (for both logged-in and guest users)
+export const deleteProductFromCart = async (userId, guestId, productId, token) => {
     try {
-        const response = await fetch(`${BASE_URL}/${userId}/cart/${productId}`, {
+        let apiUrl = `${CARTS_BASE_URL}/items/${productId}`; // Base URL for deleting cart items
+        
+        // Determine whether the user is logged in or a guest
+        if (userId) {
+            apiUrl += `/${userId}/user`; // Append the user's ID to the URL for logged-in users
+        } else if (guestId) {
+            apiUrl += `/${guestId}/guest`; // Append the guest's ID to the URL for guest users
+        }
+        
+        const response = await fetch(apiUrl, {
             method: "DELETE",
             headers: {
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${token}`,
             },
         });
+        
         if (response.ok) {
-            return await response.json();
+            return { message: "Product deleted from cart successfully." };
         } else {
             const data = await response.json();
-            throw new Error(data.message);
+            throw new Error(data.error);
         }
     } catch (error) {
         console.error("Error deleting product from cart:", error);
@@ -552,5 +619,279 @@ export const searchProducts = async (searchQuery) => {
   } catch (error) {
     console.error('Error searching for products:', error);
     throw error;
+  }
+};
+
+export const updateUser = async (userId, updatedUserData, token) => {
+  try {
+    const response = await fetch(`/api/users/${userId}`, {
+      method: "PATCH",
+      headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify(updatedUserData),
+    });
+     if (response.ok) {
+        return data.updatedUser;
+      } else {
+        throw new Error(data.error);
+      }    const data = await response.json();
+ 
+  } catch (error) {
+      console.error("Error updating user:", error);
+      throw error;
+  }
+};
+
+export const deleteUser = async (userId, token) => {
+    try {
+        const response = await fetch(`/api/users/delete-account/${userId}`, {
+            method: "DELETE",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`,
+            },
+        });
+        const data = await response.json();
+        if (response.ok) {
+            return data.message; 
+        } else {
+            throw new Error(data.error);
+        }
+    } catch (error) {
+        console.error("Error deleting user:", error);
+        throw error;
+    }
+};
+
+// Update a billing address by addressId
+export const updateBillingAddress = async (userId, addressId, updatedAddressData, token) => {
+  try {
+    const response = await fetch(`${BASE_URL}/me/billing-addresses/${addressId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ userId, updatedAddressData }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      return data; 
+    } else {
+      throw new Error(data.message);
+    }
+  } catch (error) {
+    throw new Error(`Error updating billing address: ${error.message}`);
+  }
+};
+
+// Update a user's shipping address in the database
+export const updateShippingAddress = async (userId, addressId, updatedAddressData, token) => {
+  try {
+    const response = await fetch(`${BASE_URL}/me/shipping-addresses/${addressId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ userId, updatedAddressData }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      return data;
+    } else {
+      throw new Error(data.message);
+    }
+  } catch (error) {
+    throw new Error(`Error updating shipping address: ${error.message}`);
+  }
+};
+
+// Delete a billing address by addressId
+export const deleteBillingAddress = async (addressId, token) => {
+  try {
+    const response = await fetch(`${BASE_URL}/me/billing-addresses/${addressId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      return data; 
+    } else {
+      throw new Error(data.message);
+    }
+  } catch (error) {
+    throw new Error(`Error deleting billing address: ${error.message}`);
+  }
+};
+
+// Delete a user's shipping address in the database
+export const deleteShippingAddress = async (addressId, token) => {
+  try {
+    const response = await fetch(`${BASE_URL}/me/shipping-addresses/${addressId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      return data;
+    } else {
+      throw new Error(data.message);
+    }
+  } catch (error) {
+    throw new Error(`Error deleting shipping address: ${error.message}`);
+  }
+};
+
+// Create a new billing address for the current user
+export const createBillingAddress = async (userId, billingAddressData, token) => {
+  try {
+    const response = await fetch(`${BASE_URL}/me/billing-addresses`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ userId, billingAddressData }),    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      return data; 
+    } else {
+      throw new Error(data.message);
+    }
+  } catch (error) {
+    throw new Error(`Error creating billing address: ${error.message}`);
+  }
+};
+
+// Create a new shipping address for the user in the database
+export const createShippingAddress = async (userId, shippingAddressData, token) => {
+  try {
+    const response = await fetch(`${BASE_URL}/me/shipping-addresses`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ userId, shippingAddressData }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      return data; 
+    } else {
+      throw new Error(data.message);
+    }
+  } catch (error) {
+    throw new Error(`Error creating shipping address: ${error.message}`);
+  }
+};
+
+// Add a new billing address to the user's profile
+export const addBillingAddress = async (userId, billingAddressData, token) => {
+  try {
+    const response = await fetch(`${BASE_URL}/me/billing-addresses/add`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ userId, billingAddressData }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      return data; 
+    } else {
+      throw new Error(data.message);
+    }
+  } catch (error) {
+    throw new Error(`Error adding billing address: ${error.message}`);
+  }
+};
+
+// Add a new shipping address for the user in the database
+export const addShippingAddress = async (userId, shippingAddressData, token) => {
+  try {
+    const response = await fetch(`${BASE_URL}/me/shipping-addresses/add`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ userId, shippingAddressData }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      return data;
+    } else {
+      throw new Error(data.message);
+    }
+  } catch (error) {
+    throw new Error(`Error adding shipping address: ${error.message}`);
+  }
+};
+
+// Fetch user's billing addresses from the database
+export const fetchUserBillingAddresses = async (userId, token) => {
+  try {
+    const response = await fetch(`${BASE_URL}/me/billing-addresses`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      return data; 
+    } else {
+      throw new Error(data.message);
+    }
+  } catch (error) {
+    throw new Error(`Error fetching user's billing addresses: ${error.message}`);
+  }
+};
+
+// Fetch user's shipping addresses from the database
+export const fetchUserShippingAddresses = async (userId, token) => {
+  try {
+    const response = await fetch(`${BASE_URL}/me/shipping-addresses`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      return data; 
+    } else {
+      throw new Error(data.message);
+    }
+  } catch (error) {
+    throw new Error(`Error fetching user's shipping addresses: ${error.message}`);
   }
 };

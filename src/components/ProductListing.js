@@ -37,7 +37,7 @@ const ProductListing = () => {
                                 <p className="card-text">{product.description}</p>
                                 <p className="card-text">Price: ${product.amount}</p>
                                 <p className="card-text">Availability: {product.availability ? 'In Stock' : 'Out of Stock'}</p>
-                                <p className="card-text">Category: {product.category_id}</p>
+                                {product.category && <p className="card-text">Category: {product.category}</p>}
                                 <p className="card-text">Brand: {product.brand}</p>
                             </div>
                         </div>

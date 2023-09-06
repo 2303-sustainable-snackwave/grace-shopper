@@ -288,7 +288,10 @@ export const fetchAllProducts = async () => {
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
-    return await response.json();
+
+    const products = await response.json();
+
+    return products;
   } catch (error) {
     console.error("Error fetching all products:", error);
     throw error;

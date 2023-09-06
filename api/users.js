@@ -18,13 +18,12 @@ const {
 } = require('../db/models/users')
 
 router.post('/register', async (req, res, next) => {
+  const { name, email, password } = req.body;
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-
-    const { name, email, password } = req.body;
       const userExists = await getUserByEmail(email);
       if (userExists) {
         return res.status(409).json({
@@ -40,10 +39,8 @@ router.post('/register', async (req, res, next) => {
           name: 'UserPasswordError'
         });
       }
-      
-    const hashedPassword = await bcrypt.hash(password, 10);
 
-    const newUser = await createUser({ name, email, password: hashedPassword });
+    const newUser = await createUser({ name, email, password });
     const token = generateToken(newUser.id, newUser.email);
     res.status(201).json({
       message: "Thank you for signing up",
@@ -63,9 +60,10 @@ router.post('/register', async (req, res, next) => {
 // POST /api/users/login
 
 router.post('/login', async (req, res, next) => {
+  const { email, password } = req.body;
   try {
-    const { email, password } = req.body;
     const user = await getUserByEmail(email);
+    console.log('User Object:', user);
     if (!user) {
       return res.status(401).json({
           error: 'Email not found.',
@@ -73,8 +71,11 @@ router.post('/login', async (req, res, next) => {
           name: 'EmailNotFoundError'
       });
     }
+    console.log('Provided Password:', password);
+    console.log('Stored Hashed Password:', user.password);
     const passwordMatch = await bcrypt.compare(password, user.password);
-     if (!passwordMatch) {
+    console.log('Password Match:', passwordMatch);
+         if (!passwordMatch) {
       return res.status(401).json({
         error: 'Invalid credentials',
         message: 'Invalid email or password',

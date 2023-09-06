@@ -46,7 +46,7 @@ export const registerUser = async (
 };
 
 // Login a user
-export const loginUser = async (email, password, setToken, setMessage) => {
+export const loginUser = async (email, password, setToken, setMessage, setEmail) => {
   try {
     const response = await fetch(`${BASE_URL}/login`, {
       method: 'POST',
@@ -61,7 +61,7 @@ export const loginUser = async (email, password, setToken, setMessage) => {
     const result = await response.json();
     console.log(result);
     if (result.token) {
-      setUser(result.user.username)
+      setEmail(result.user.email)
     }
     setToken(result.token);
     setMessage(result.message);

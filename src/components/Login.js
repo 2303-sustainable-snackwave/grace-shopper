@@ -10,10 +10,11 @@ const Login = ({setToken}) => {
   const [error, setError] = useState(null);
 
 
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await loginUser(email, password, setToken, setMessage);
+      await loginUser(email, password, setToken, setMessage, setEmail);
       setEmail("");
       setPassword("");
       navigate("/products");

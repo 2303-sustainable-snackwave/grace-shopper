@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from 'react-router-dom';
-import { fetchProductById, createCart, fetchUserCart, addProductToCart } from "../api";
+import { useParams, useNavigate } from "react-router-dom";
+import {
+  fetchProductById,
+  createCart,
+  fetchUserCart,
+  addProductToCart,
+} from "../api";
 
-const ProductDetail = ({ token }) => {
+const ProductDetail = ({ token, userId, guestId }) => {
   const [product, setProduct] = useState(null);
   const [error, setError] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [showModal, setShowModal] = useState(false);
-  const [userId, setUserId] = useState(null);
-  const [guestId, setGuestId] = useState(null);
 
   const navigate = useNavigate();
   const { productId } = useParams();
@@ -27,20 +30,23 @@ const ProductDetail = ({ token }) => {
   }, [productId]);
 
   const handleBackClick = () => {
-    navigate('/products');
+    navigate("/products");
   };
 
   const handleQuantityChange = (e) => {
     const newQuantity = parseInt(e.target.value, 10);
     setQuantity(newQuantity);
   };
+  console.log(userId, token);
 
   const handleAddToCart = async (userId, guestId, productId, token) => {
+    console.log("Entering handleAddToCart");
     console.log("UserId:", userId);
+    console.log("GuestId:", guestId);
     try {
       if (userId) {
         const userCart = await fetchUserCart(userId, token);
-  
+
         if (!userCart || !userCart.cart) {
           const cartId = await createCart(userId, null);
           await addProductToCart(userId, productId, token, cartId);
@@ -49,7 +55,7 @@ const ProductDetail = ({ token }) => {
         }
       } else if (guestId) {
         const guestCart = await fetchUserCart(guestId, null);
-  
+
         if (!guestCart || !guestCart.cart) {
           const cartId = await createCart(null, guestId);
           await addProductToCart(null, productId, null, cartId);
@@ -57,18 +63,37 @@ const ProductDetail = ({ token }) => {
           await addProductToCart(null, productId, null, guestCart.cart.id);
         }
       }
-  
-      alert("Product added to cart successfully!");
+
+      console.log("Product added to cart successfully!");
     } catch (err) {
+      console.error("Error adding product to cart:", err);
       setError("Error adding product to cart");
     }
   };
-      
-  if (!product) return <div className="d-flex justify-content-center mt-5"><div className="spinner-border" role="status"><span className="sr-only">Loading...</span></div></div>;
+
+  if (!product)
+    return (
+      <div className="d-flex justify-content-center mt-5">
+        <div className="spinner-border" role="status">
+          <span className="sr-only">Loading...</span>
+        </div>
+      </div>
+    );
 
   return (
-    <div style={{ marginBottom: '10px' }} className="container mt-5">
-      <div className="card">
+    <div
+      style={{ marginBottom: "10px", marginTop: "5%" }}
+      className="container"
+    >
+      <div
+        className="card"
+        style={{
+          boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+          border: "1px solid #e0e0e0",
+          borderRadius: "10px",
+          marginBottom: "2%",
+        }}
+      >
         <img
           src={product.imageurl}
           alt={product.name}
@@ -76,8 +101,9 @@ const ProductDetail = ({ token }) => {
           onClick={() => setShowModal(true)}
           onError={(e) => {
             e.target.onerror = null;
-            e.target.src = '/path/to/default/image.jpg';
+            e.target.src = "/path/to/default/image.jpg";
           }}
+          style={{ padding: "10px", borderRadius: "10px" }}
         />
         <div className="card-body">
           <h5 className="card-title">{product.name}</h5>
@@ -99,28 +125,48 @@ const ProductDetail = ({ token }) => {
               value={quantity}
               onChange={handleQuantityChange}
               min="1"
+              style={{ marginLeft: "10px" }}
             />
           </div>
           <button
             className="btn btn-primary mt-3"
             onClick={() => handleAddToCart(userId, guestId, product.id, token)}
-            >
+            style={{ marginRight: "10px" }}
+          >
             Add to Cart
           </button>
           {error && <p className="text-danger mt-3">{error}</p>}
         </div>
       </div>
-      <button className="btn btn-primary mt-5" onClick={handleBackClick}>
+      <button
+        className="btn btn-primary mt-5"
+        onClick={handleBackClick}
+        style={{ marginRight: "10px" }}
+      >
         Back to Product Listing
       </button>
-      <div className={`modal ${showModal ? 'show' : ''}`} tabIndex="-1" style={{ display: showModal ? 'block' : 'none' }}>
+      <div
+        className={`modal ${showModal ? "show" : ""}`}
+        tabIndex="-1"
+        style={{ display: showModal ? "block" : "none" }}
+      >
         <div className="modal-dialog modal-lg">
           <div className="modal-content">
             <div className="modal-body">
-              <img src={product.imageurl} alt={product.name} className="img-fluid" />
+              <img
+                src={product.imageurl}
+                alt={product.name}
+                className="img-fluid"
+              />
             </div>
             <div className="modal-footer">
-              <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Close</button>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setShowModal(false)}
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>

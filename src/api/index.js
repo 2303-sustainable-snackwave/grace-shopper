@@ -46,7 +46,7 @@ export const registerUser = async (
 };
 
 // Login a user
-export const loginUser = async (email, password, setToken, setMessage, setEmail) => {
+export const loginUser = async (email, password) => {
   try {
     const response = await fetch(`${BASE_URL}/login`, {
       method: 'POST',
@@ -61,10 +61,10 @@ export const loginUser = async (email, password, setToken, setMessage, setEmail)
     const result = await response.json();
     console.log(result);
     if (result.token) {
-      setEmail(result.user.email)
+      return result.token; // Return the token upon successful login.
+    } else {
+      throw new Error(result.message || 'Login failed. Please try again.');
     }
-    setToken(result.token);
-    setMessage(result.message);
   } catch (error) {
     console.error(error);
     throw new Error('Login failed. Please try again.'); 

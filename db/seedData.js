@@ -1,9 +1,10 @@
 const {faker} = require('@faker-js/faker');
 const {createProducts, getAllProducts} = require('./models/products');
+const {createProductCategory} = require('./models/categories');
 const {createUser, getAllUsers, getUserById} = require('./models/users');
 const {createBillingAddress} = require('./models/billingAddress');
 const {createShippingAddress} = require('./models/shippingAddress');
-const {createReview, getAllReviews, getReviewsByProduct} = require('./models/reviews');
+const {createReview, } = require('./models/reviews');
 const {createOrderInDatabase} = require('./models/checkout');
 const {getOrderByUserId} = require('./models/orders');
 const {createCart, getCartByUserId, addItemToCart, getCartById, getCartItemsByCartId} = require('./models/cart');
@@ -20,6 +21,7 @@ async function dropTables() {
       DROP TABLE IF EXISTS user_shipping_addresses CASCADE; 
       DROP TABLE IF EXISTS shipping_addresses CASCADE;
       DROP TABLE IF EXISTS products CASCADE;
+      DROP TABLE IF EXISTS categories CASCADE;
       DROP TABLE IF EXISTS product_reviews CASCADE;
       DROP TABLE IF EXISTS order_history CASCADE;
       DROP TABLE IF EXISTS carts CASCADE;
@@ -39,99 +41,104 @@ async function createTables() {
     console.log("Starting to create table...");
 
     await client.query(`
-      CREATE TABLE users (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
-        email VARCHAR(255) UNIQUE NOT NULL,
-        password VARCHAR(255) NOT NULL,
-        role VARCHAR(255) NOT NULL
-      );
-      CREATE TABLE products (
-        id SERIAL PRIMARY KEY,
-        category TEXT,
-        brand TEXT,
-        name TEXT,
-        imageUrl TEXT,
-        description TEXT,
-        min_price DECIMAL(10, 2) NOT NULL,
-        max_price DECIMAL(10, 2) NOT NULL,
-        currency_code TEXT,
-        amount DECIMAL(10, 2) NOT NULL,
-        availability BOOLEAN,
-        total_inventory INT
-      );
-      CREATE TABLE billing_addresses (
-        id SERIAL PRIMARY KEY,
-        user_id INT NOT NULL,
-        street VARCHAR(255) NOT NULL,
-        city VARCHAR(255) NOT NULL,
-        state VARCHAR(255) NOT NULL,
-        postal_code VARCHAR(20) NOT NULL,
-        country VARCHAR(255) NOT NULL,
-        FOREIGN KEY (user_id) REFERENCES users(id)
-      );
-      CREATE TABLE user_billing_addresses (
-        id SERIAL PRIMARY KEY,
-        user_id INTEGER REFERENCES users(id),
-        billing_address_id INTEGER REFERENCES billing_addresses(id)
-      );  
-      CREATE TABLE shipping_addresses (
-        id SERIAL PRIMARY KEY,
-        user_id INT NOT NULL,
-        street VARCHAR(255) NOT NULL,
-        city VARCHAR(255) NOT NULL,
-        state VARCHAR(255) NOT NULL,
-        postal_code VARCHAR(20) NOT NULL,
-        country VARCHAR(255) NOT NULL,
-        FOREIGN KEY (user_id) REFERENCES users(id)
-      );
-      CREATE TABLE user_shipping_addresses (
-        id SERIAL PRIMARY KEY,
-        user_id INTEGER REFERENCES users(id),
-        shipping_address_id INTEGER REFERENCES shipping_addresses(id)
-      ); 
-      CREATE TABLE product_reviews (
-        id SERIAL PRIMARY KEY,
-        product_id INT NOT NULL,
-        user_id INT NOT NULL,
-        rating INT NOT NULL,
-        review_text TEXT,
-        review_date TIMESTAMP NOT NULL,
-        FOREIGN KEY (product_id) REFERENCES products(id),
-        FOREIGN KEY (user_id) REFERENCES users(id)
-      );
-      CREATE TABLE order_history (
-        id SERIAL PRIMARY KEY,
-        session_id UUID NOT NULL,
-        user_id INT NOT NULL,
-        order_date TIMESTAMP NOT NULL,
-        total_amount DECIMAL(10, 2) NOT NULL,
-        billing_address_id INT NOT NULL,
-        shipping_address_id INT NOT NULL,
-        order_products JSONB[] NOT NULL DEFAULT '{}',
-        FOREIGN KEY (user_id) REFERENCES users(id),
-        FOREIGN KEY (shipping_address_id) REFERENCES shipping_addresses(id),
-        FOREIGN KEY (billing_address_id) REFERENCES billing_addresses(id)
-      ); 
-      CREATE TABLE carts (
-        id SERIAL PRIMARY KEY,
-        user_id INT,
-        guest_id UUID,
-        FOREIGN KEY (user_id) REFERENCES users(id),
-        created_at TIMESTAMPTZ DEFAULT NOW(),
-        updated_at TIMESTAMPTZ DEFAULT NOW()
-      );
-      CREATE TABLE cart_items (
-        id SERIAL PRIMARY KEY,
-        user_id INT,
-        cart_id INT,
-        product_id INT,
-        quantity INT,
-        FOREIGN KEY (cart_id) REFERENCES carts(id) ON DELETE CASCADE,
-        FOREIGN KEY (product_id) REFERENCES products(id),
-        created_at TIMESTAMPTZ DEFAULT NOW(),
-        updated_at TIMESTAMPTZ DEFAULT NOW()
-      );
+    CREATE TABLE users (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      email VARCHAR(255) UNIQUE NOT NULL,
+      password VARCHAR(255) NOT NULL,
+      is_admin BOOLEAN NOT NULL
+    );
+    CREATE TABLE categories (
+      id SERIAL PRIMARY KEY,
+      name TEXT NOT NULL
+    );
+    CREATE TABLE products (
+      id SERIAL PRIMARY KEY,
+      category_id INT REFERENCES categories(id),
+      brand TEXT,
+      name TEXT,
+      imageUrl TEXT,
+      description TEXT,
+      min_price DECIMAL(10, 2) NOT NULL,
+      max_price DECIMAL(10, 2) NOT NULL,
+      currency_code TEXT,
+      amount DECIMAL(10, 2) NOT NULL,
+      availability BOOLEAN,
+      total_inventory INT
+    );
+    CREATE TABLE billing_addresses (
+      id SERIAL PRIMARY KEY,
+      user_id INT NOT NULL,
+      street VARCHAR(255) NOT NULL,
+      city VARCHAR(255) NOT NULL,
+      state VARCHAR(255) NOT NULL,
+      postal_code VARCHAR(20) NOT NULL,
+      country VARCHAR(255) NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+    CREATE TABLE user_billing_addresses (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER REFERENCES users(id),
+      billing_address_id INTEGER REFERENCES billing_addresses(id)
+    );  
+    CREATE TABLE shipping_addresses (
+      id SERIAL PRIMARY KEY,
+      user_id INT NOT NULL,
+      street VARCHAR(255) NOT NULL,
+      city VARCHAR(255) NOT NULL,
+      state VARCHAR(255) NOT NULL,
+      postal_code VARCHAR(20) NOT NULL,
+      country VARCHAR(255) NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+    CREATE TABLE user_shipping_addresses (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER REFERENCES users(id),
+      shipping_address_id INTEGER REFERENCES shipping_addresses(id)
+    ); 
+    CREATE TABLE product_reviews (
+      id SERIAL PRIMARY KEY,
+      product_id INT NOT NULL,
+      user_id INT NOT NULL,
+      rating INT NOT NULL,
+      review_text TEXT,
+      review_date TIMESTAMP NOT NULL,
+      FOREIGN KEY (product_id) REFERENCES products(id),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+    CREATE TABLE order_history (
+      id SERIAL PRIMARY KEY,
+      session_id UUID NOT NULL,
+      user_id INT NOT NULL,
+      order_date TIMESTAMP NOT NULL,
+      total_amount DECIMAL(10, 2) NOT NULL,
+      billing_address_id INT NOT NULL,
+      shipping_address_id INT NOT NULL,
+      order_products JSONB[] NOT NULL DEFAULT '{}',
+      status TEXT NOT NULL, -- New column for order status
+      FOREIGN KEY (user_id) REFERENCES users(id),
+      FOREIGN KEY (shipping_address_id) REFERENCES shipping_addresses(id),
+      FOREIGN KEY (billing_address_id) REFERENCES billing_addresses(id)
+    );
+    CREATE TABLE carts (
+      id SERIAL PRIMARY KEY,
+      user_id INT,
+      guest_id UUID,
+      FOREIGN KEY (user_id) REFERENCES users(id),
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    );
+    CREATE TABLE cart_items (
+      id SERIAL PRIMARY KEY,
+      user_id INT,
+      cart_id INT,
+      product_id INT,
+      quantity INT,
+      FOREIGN KEY (cart_id) REFERENCES carts(id) ON DELETE CASCADE,
+      FOREIGN KEY (product_id) REFERENCES products(id),
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    );
   `);
     console.log("Finished creating table!");
   } catch (error) {
@@ -141,40 +148,44 @@ async function createTables() {
 }
 
 const bikeData = () => {
-    console.log("Generating bike data...");
-    const category = faker.vehicle.bicycle();
-    let name = "";
-    name = name + "" + faker.vehicle.model();
-    const minPrice = faker.number.float({
-        min: 500,
-        max: 20000,
-        precision: 0.01
-    });
-    const maxPrice = faker.number.float({
-        min: minPrice,
-        max: minPrice * 3,
-        precision: 0.01
-    });
+  console.log("Generating bike data...");
+  const categoryId = faker.number.int({ min: 1, max: 10 });
+  let name = "";
+  name = name + "" + faker.vehicle.model();
+  const minPrice = faker.number.float({
+    min: 500,
+    max: 20000,
+    precision: 0.01,
+  });
+  const maxPrice = faker.number.float({
+    min: minPrice,
+    max: minPrice * 3,
+    precision: 0.01,
+  });
 
-    return{
-       category: category,
-       brand: faker.vehicle.manufacturer(),
-       name: name, 
-       imageUrl: faker.image.urlLoremFlickr({ category: 'bicycle' }),
-       description: faker.lorem.paragraph(),
-       min_price: minPrice,
-       max_price: maxPrice,
-       currency_code: "USD",
-       amount: faker.number.float({
-        min: minPrice,
-        max: maxPrice,
-        precision: 0.01
-       }),
-       availability: faker.datatype.boolean(),
-       total_inventory: faker.number.int({ min: 1, max: 5 }),
-    }
-}
+  if (!minPrice || isNaN(minPrice)) {
+    // Ensure minPrice is a valid number
+    throw new Error("Invalid minPrice");
+  }
 
+  return {
+    category: categoryId,
+    brand: faker.vehicle.manufacturer(),
+    name: name,
+    imageUrl: faker.image.urlLoremFlickr({ category: 'bicycle' }),
+    description: faker.lorem.paragraph(),
+    min_price: minPrice,
+    max_price: maxPrice,
+    currency_code: "USD",
+    amount: faker.number.float({
+      min: minPrice,
+      max: maxPrice,
+      precision: 0.01,
+    }),
+    availability: faker.datatype.boolean(),
+    total_inventory: faker.number.int({ min: 1, max: 5 }),
+  };
+};
 
 async function fillDB(numSamples) {
   try {
@@ -230,27 +241,27 @@ async function createInitialUsers() {
 
       if (userData.billing_addresses && userData.billing_addresses.length > 0) {
         await Promise.all(userData.billing_addresses.map(async (billingAddress) => {
-          await createBillingAddress(
-            user.id,
-            billingAddress.street,
-            billingAddress.city,
-            billingAddress.state,
-            billingAddress.postalCode,
-            billingAddress.country
-          );
+          await createBillingAddress({
+            userId: user.id,
+            street: billingAddress.street,
+            city: billingAddress.city,
+            state: billingAddress.state,
+            postalCode: billingAddress.postalCode,
+            country: billingAddress.country
+          });
         }));
       }
 
       if (userData.shipping_addresses && userData.shipping_addresses.length > 0) {
         await Promise.all(userData.shipping_addresses.map(async (shippingAddress) => {
-          await createShippingAddress(
-            user.id,
-            shippingAddress.street,
-            shippingAddress.city,
-            shippingAddress.state,
-            shippingAddress.postalCode,
-            shippingAddress.country
-          );
+          await createShippingAddress({
+            userId: user.id,
+            street: shippingAddress.street,
+            city: shippingAddress.city,
+            state: shippingAddress.state,
+            postalCode: shippingAddress.postalCode,
+            country: shippingAddress.country
+          });
         }));
       }
 
@@ -408,16 +419,14 @@ async function fillOrderHistory(numOrders) {
   }
 }
 
-
-
 async function rebuildDB() {
   try {
       await dropTables();
       await createTables();
-      await fillDB(10);
+      await fillDB(75);
       await createInitialUsers();
-      await fillProductReviews(10);
-      await fillOrderHistory(5);
+      await fillProductReviews(65);
+      await fillOrderHistory(100);
       await fillCarts(3);
       await fillCartProducts(5);
   }   catch(error) {

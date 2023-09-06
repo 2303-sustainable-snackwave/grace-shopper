@@ -42,7 +42,7 @@ function App() {
     return (
       <CartProvider>
         <Router>
-          <Navbar />
+          <Navbar token={token} logout={logout} />
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/cart" element={<Cart token={token}/>} />

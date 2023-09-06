@@ -179,6 +179,20 @@ async function destroyProduct(id) {
   }
 }
 
+async function searchProducts(query) {
+  try {
+      const { rows: products } = await client.query(`
+          SELECT *
+          FROM products
+          WHERE name ILIKE $1
+          OR description ILIKE $1;
+      `, [`%${query}%`]);
+
+      return products;
+  } catch (error) {
+      throw new Error('Could not search products: ' + error.message);
+  }
+}
 
 module.exports = {
   createProducts,
@@ -187,4 +201,5 @@ module.exports = {
   getAllProducts,
   updateProduct,
   destroyProduct,
+  searchProducts
 };

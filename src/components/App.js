@@ -21,6 +21,8 @@ import { CartProvider } from '../CartContext';
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem("token") || "");
+  const [userId, setUserId] = useState(null);
+  const [guestId, setGuestId] = useState(null);
 
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
@@ -46,7 +48,7 @@ function App() {
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/cart" element={<Cart token={token}/>} />
-              <Route path="/products/:productId" element={<ProductDetail token={token} />} />
+              <Route path="/products/:productId" element={<ProductDetail token={token} userId={userId} guestId={guestId} />} />
               <Route path="/products" element={<ProductListing />} />
               <Route path="/reviews/:productId" element={<Reviews />} />
               <Route path="/search" element={<Search />} />

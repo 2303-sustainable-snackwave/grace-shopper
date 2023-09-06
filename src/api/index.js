@@ -72,7 +72,7 @@ export const loginUser = async (email, password, setToken, setMessage, setEmail)
 };
 
 // Fetch current user's info
-export const fetchCurrentUser = async (token, setEmail) => {
+export const fetchCurrentUser = async (token, setName, setEmail) => {
   try {
     const response = await fetch(`${BASE_URL}/me`, {
       headers: {
@@ -81,7 +81,8 @@ export const fetchCurrentUser = async (token, setEmail) => {
       },
     });
     const data = await response.json();
-    setEmail(data.email)
+    setName(data.name);
+    setEmail(data.email);
     return data;
   } catch (error) {
     console.error("Fetch Error:", error);
@@ -113,6 +114,7 @@ export const fetchUserCheckout = async (userId, token) => {
 // Helper function to create a cart for a user (both guest and logged-in)
 export const createCart = async (userId, guestId, token) => {
   try {
+    console.log("Creating cart...");
     const response = await fetch(`${CARTS_BASE_URL}`, {
       method: 'POST',
       headers: {
@@ -122,14 +124,19 @@ export const createCart = async (userId, guestId, token) => {
       body: JSON.stringify({ userId, guestId }),
     });
 
+    console.log("Response from createCart:", response);
+
     const data = await response.json();
 
     if (response.ok) {
-      return data; 
+      console.log("Cart created successfully:", data);
+      return data;
     } else {
+      console.error("Error creating cart:", data.message);
       throw new Error(data.message);
     }
   } catch (error) {
+    console.error("Error creating cart:", error.message);
     throw new Error(`Error creating cart: ${error.message}`);
   }
 };
@@ -758,7 +765,7 @@ export const deleteShippingAddress = async (addressId, token) => {
 };
 
 // Create a new billing address for the current user
-export const createBillingAddress = async (userId, billingAddressData, token) => {
+export const createBillingAddress = async ({userId, billingAddressData, token}) => {
   try {
     const response = await fetch(`${BASE_URL}/me/billing-addresses`, {
       method: 'POST',
@@ -781,8 +788,10 @@ export const createBillingAddress = async (userId, billingAddressData, token) =>
 };
 
 // Create a new shipping address for the user in the database
-export const createShippingAddress = async (userId, shippingAddressData, token) => {
-  try {
+export const createShippingAddress = async ({userId, shippingAddressData, token}) => {
+    console.log("token received???", token);
+
+    try {
     const response = await fetch(`${BASE_URL}/me/shipping-addresses`, {
       method: 'POST',
       headers: {
@@ -853,7 +862,8 @@ export const addShippingAddress = async (userId, shippingAddressData, token) => 
 };
 
 // Fetch user's billing addresses from the database
-export const fetchUserBillingAddresses = async (userId, token) => {
+export const fetchUserBillingAddresses = async (token) => {
+  console.log("Token received:", token);
   try {
     const response = await fetch(`${BASE_URL}/me/billing-addresses`, {
       method: 'GET',
@@ -861,8 +871,10 @@ export const fetchUserBillingAddresses = async (userId, token) => {
         'Authorization': `Bearer ${token}`,
       },
     });
+    console.log("Token response:", response);
 
     const data = await response.json();
+    console.log("Token response:", response);
 
     if (response.ok) {
       return data; 
@@ -875,7 +887,7 @@ export const fetchUserBillingAddresses = async (userId, token) => {
 };
 
 // Fetch user's shipping addresses from the database
-export const fetchUserShippingAddresses = async (userId, token) => {
+export const fetchUserShippingAddresses = async (token) => {
   try {
     const response = await fetch(`${BASE_URL}/me/shipping-addresses`, {
       method: 'GET',

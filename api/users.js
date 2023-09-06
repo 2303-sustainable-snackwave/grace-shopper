@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const jwt = require("jsonwebtoken");
 const bcrypt = require('bcrypt');
 const { validationResult } = require('express-validator');
 const { verifyToken, generateToken, isAuthorizedToUpdate, isAdminOrOwner} = require('./authMiddleware');
@@ -51,7 +52,17 @@ router.post('/register', async (req, res, next) => {
       }
 
     const newUser = await createUser({ name, email, password });
-    const token = generateToken(newUser.id, newUser.email);
+    const token = jwt.sign(
+      {
+        id: newUser.id,
+        name: newUser.name,
+        email: newUser.email,
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "1w",
+      }
+    );
     res.status(201).json({
       message: "Thank you for signing up",
       token,
@@ -92,7 +103,17 @@ router.post('/login', async (req, res, next) => {
         name: 'InvalidCredentialsError',
       });
     }
-    const token = generateToken(user.id, user.email);
+    const token = jwt.sign(
+      {
+        id: user.id,
+        name: user.name,
+        email: user.email
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "1w",
+      }
+    );
     res.status(200).json({
       message: "you're logged in!",
       token,
@@ -109,32 +130,55 @@ router.post('/login', async (req, res, next) => {
 });
 
 // GET /api/users/me
-router.get("/me", verifyToken, async (req, res, next) => {
+router.get("/me", async (req, res, next) => {
   try {
-    if (!req.user) {
-      throw new AuthenticationError('You must be logged in to perform this action.');
+    const token = req.headers.authorization?.split(" ")[1];
+
+    console.log("Received Token:", token);
+
+    if (!token) {
+      console.log("No token provided");
+      return res.status(401).json({
+        error: "No token provided",
+        message: "You must be logged in to perform this action",
+        name: "UnauthorizedError",
+      });
     }
 
-    const user = await getUserById(req.user.id);
+    const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+
+    console.log("Decoded Token:", decodedToken);
+
+    if (!decodedToken || !decodedToken.id) {
+      console.log("Invalid token");
+      return res.status(401).json({
+        error: "Invalid token",
+        message: "You must be logged in to perform this action",
+        name: "UnauthorizedError",
+      });
+    }
+
+    const userId = decodedToken.id;
+
+    console.log("Fetching user data for user ID:", userId);
+
+    const user = await getUserById(userId);
 
     if (!user) {
-      throw new AuthenticationError('User not found.');
+      console.log("User not found");
+      return res.status(401).json({
+        error: "User not found",
+        message: "You must be logged in to perform this action",
+        name: "UnauthorizedError",
+      });
     }
 
-    console.log("Response Status Code:", res.statusCode);
-    console.log("Response Data:", user);
+    console.log("User data retrieved successfully:", user);
 
-    res.json({ user });
+    res.json(user);
   } catch (error) {
-    // console.error('Error in /api/users/me:', error);
-
-    if (error instanceof AuthenticationError) {
-      // Handle authentication-related errors (e.g., token validation)
-      return res.status(401).json({ error: error.message });
-    }
-
-    // Handle other errors (e.g., database errors)
-    next(new UserError('There was an error finding user.'));
+    console.error("Error in /api/users/me:", error);
+    next(error);
   }
 });
 
@@ -164,7 +208,7 @@ router.patch('/:userId', verifyToken, isAuthorizedToUpdate, isAdminOrOwner, asyn
 
 router.delete('/delete-account/:userId', verifyToken, isAuthorizedToUpdate, async (req, res, next) => {
   try {
-    const { userId } = req.params;
+    const { userId } = req.user;
 
     const deletedUser = await deleteUser(userId);
 
@@ -181,8 +225,8 @@ router.delete('/delete-account/:userId', verifyToken, isAuthorizedToUpdate, asyn
 // Define the route handler for creating a new billing address
 router.post('/me/billing-addresses', verifyToken, isAuthorizedToUpdate, async (req, res) => {
   try {
-    // Extract data from the request body
-    const { userId, street, city, state, postalCode, country } = req.body;
+    const { userId } = req.user;
+    const { street, city, state, postalCode, country } = req.body;
 
     // Call the controller function to create the billing address
     const newBillingAddress = await createBillingAddress({
@@ -207,7 +251,7 @@ router.post('/me/billing-addresses', verifyToken, isAuthorizedToUpdate, async (r
 router.post('/me/shipping-addresses', verifyToken, isAuthorizedToUpdate, async (req, res) => {
   try {
     // Extract the user ID from the request (assuming it's stored in req.user or req.userId)
-    const userId = req.user.id; // Adjust this based on your authentication setup
+    const { userId } = req.user;
     // Extract the shipping address data from the request body
     const { street, city, state, postalCode, country } = req.body;
 
@@ -232,12 +276,20 @@ router.post('/me/shipping-addresses', verifyToken, isAuthorizedToUpdate, async (
 
 // Define the route handler for getting billing addresses by user ID
 router.get('/me/billing-addresses', verifyToken, isAuthorizedToUpdate, async (req, res) => {
+  console.log('Token Data:', verifyToken);
+
   try {
     // Extract the user ID from the request (assuming it's stored in req.user or req.userId)
-    const userId = req.user.id; // Adjust this based on your authentication setup
+    const { userId } = req.user;
+    
+    // Log the token data
+    console.log('Token Data:', req.user);
 
     // Call the controller function to retrieve billing addresses by user ID
     const billingAddresses = await getBillingAddressByUserId(userId);
+
+    // Add a console log to see the retrieved billing addresses
+    console.log('Billing Addresses:', billingAddresses);
 
     // Return a JSON response with the billing addresses
     res.json(billingAddresses);
@@ -252,8 +304,7 @@ router.get('/me/billing-addresses', verifyToken, isAuthorizedToUpdate, async (re
 router.get('/me/shipping-addresses', verifyToken, isAuthorizedToUpdate,  async (req, res) => {
   try {
     // Extract the user ID from the request (assuming it's stored in req.user or req.userId)
-    const userId = req.user.id; // Adjust this based on your authentication setup
-
+    const { userId } = req.user;
     // Call the controller function to retrieve shipping addresses by user ID
     const shippingAddresses = await getShippingAddressByUserId(userId);
 
@@ -270,7 +321,7 @@ router.get('/me/shipping-addresses', verifyToken, isAuthorizedToUpdate,  async (
 router.post('/me/billing-addresses/add', verifyToken, isAuthorizedToUpdate, async (req, res) => {
   try {
     // Extract the user ID from the request (assuming it's stored in req.user or req.userId)
-    const userId = req.user.id; // Adjust this based on your authentication setup
+    const { userId } = req.user;
     // Extract the list of billing addresses from the request body
     const { billingAddressList } = req.body;
 
@@ -290,7 +341,7 @@ router.post('/me/billing-addresses/add', verifyToken, isAuthorizedToUpdate, asyn
 router.post('/me/shipping-addresses/add', verifyToken, isAuthorizedToUpdate, async (req, res) => {
   try {
     // Extract the user ID from the request (assuming it's stored in req.user or req.userId)
-    const userId = req.user.id; // Adjust this based on your authentication setup
+    const { userId } = req.user;
     // Extract the list of shipping addresses from the request body
     const { shippingAddressList } = req.body;
 

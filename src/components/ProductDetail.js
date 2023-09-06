@@ -2,13 +2,12 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from 'react-router-dom';
 import { fetchProductById, createCart, fetchUserCart, addProductToCart } from "../api";
 
-const ProductDetail = ({ token }) => {
+const ProductDetail = ({ token, userId, guestId }) => {
   const [product, setProduct] = useState(null);
   const [error, setError] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [showModal, setShowModal] = useState(false);
-  const [userId, setUserId] = useState(null);
-  const [guestId, setGuestId] = useState(null);
+
 
   const navigate = useNavigate();
   const { productId } = useParams();
@@ -34,9 +33,12 @@ const ProductDetail = ({ token }) => {
     const newQuantity = parseInt(e.target.value, 10);
     setQuantity(newQuantity);
   };
+  console.log(userId, token);
 
   const handleAddToCart = async (userId, guestId, productId, token) => {
+    console.log("Entering handleAddToCart");
     console.log("UserId:", userId);
+    console.log("GuestId:", guestId);
     try {
       if (userId) {
         const userCart = await fetchUserCart(userId, token);
@@ -58,8 +60,9 @@ const ProductDetail = ({ token }) => {
         }
       }
   
-      alert("Product added to cart successfully!");
+      console.log("Product added to cart successfully!");
     } catch (err) {
+      console.error("Error adding product to cart:", err);
       setError("Error adding product to cart");
     }
   };

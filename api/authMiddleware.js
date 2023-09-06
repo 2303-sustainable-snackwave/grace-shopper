@@ -7,9 +7,9 @@ const {
   AuthenticationError,
 } = require('../errors');
 
-function generateToken(userId, email) {
-  return jwt.sign({ userId, email }, process.env.JWT_SECRET, { expiresIn: '1w' });
-}
+// function generateToken(userId, name, email) {
+//   return jwt.sign({ userId, name, email }, process.env.JWT_SECRET, { expiresIn: '1w' });
+// }
 
 function generateGuestId() {
   // Generate a UUID (Version 4)
@@ -25,7 +25,7 @@ function verifyToken(req, res, next) {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       console.log("Decoded Token:", decoded);
-      req.user = decoded;
+      userId = decoded.id;
     } catch (error) {
       console.error("Token Verification Error:", error);
       next(new TokenVerificationError('Invalid token'));
@@ -101,8 +101,9 @@ function isAdmin(req, res, next) {
 module.exports = { 
   verifyToken,
   checkCartPermission,
-  generateToken,
+  // generateToken,
   isAdminOrOwner,
   isAdmin,
-  isAuthorizedToUpdate
+  isAuthorizedToUpdate,
+  generateGuestId
 };

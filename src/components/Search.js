@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { searchProducts } from '../api';
-// Either attach to Navbar.js or have it static in our main index.js up to you guys.
+import { Link } from 'react-router-dom';
 
 const Search = () => {
     const [query, setQuery] = useState('');
@@ -37,12 +37,15 @@ const Search = () => {
             <ul className="search-results">
                 {results.map(product => (
                     <li key={product.id}>
-                        <h3>{product.name}</h3>
-                        <p>{product.description}</p>
-                        <p>Price: {product.min_price} - {product.max_price} {product.currency_code}</p>
+                        <Link to={`/products/${product.id}`}>
+                            <h3>{product.name}</h3>
+                            <p>{product.description}</p>
+                            <p>Price: {product.min_price} - {product.max_price} {product.currency_code}</p>
+                        </Link>
                     </li>
                 ))}
             </ul>
+
         </div>
     );
 };

@@ -6,6 +6,7 @@ const {
 const {
   getProductById,
   getAllProducts,
+  searchProducts,
 } = require('../db/models/products');
 
 
@@ -32,6 +33,20 @@ router.get('/:productId', async (req, res, next) => {
     res.json(product);
   } catch (error) {
     next(new ProductError('There was an error retrieving the product.'));
+  }
+});
+
+// GET /api/products/search
+router.get('/search', async (req, res, next) => {
+  try {
+      const { query } = req.query;
+      if (!query) {
+          return res.status(400).json({ error: 'Query parameter is required' });
+      }
+      const products = await searchProducts(query);
+      res.json(products);
+  } catch (error) {
+      next(new ProductError('There was an error searching for products.'));
   }
 });
 

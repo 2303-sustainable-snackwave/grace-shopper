@@ -1,60 +1,70 @@
-import React, { useState } from 'react';
-import { loginUser } from '../api';
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { loginUser } from "../api";
 
-const Login = () => {
-  const [credentials, setCredentials] = useState({
-    email: '',
-    password: ''
-  });
+const Login = ({ setToken }) => {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setCredentials(prevState => ({
-      ...prevState,
-      [name]: value
-    }));
+  const inputStyles = {
+    width: "100%",
+    boxSizing: "border-box",
+    padding: "10px",
+    marginBottom: "10px"
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await loginUser(credentials);
-      
-    } catch (err) {
-      setError(err.message);
+      const token = await loginUser(email, password);
+      setToken(token);
+      navigate("/products");
+    } catch (error) {
+      setError("Login failed. Please check your credentials.");
     }
   };
 
   return (
     <div className="login-container">
       <h2>Login</h2>
-      {error && <p className="error">{error}</p>}
+      <p className="form-text">
+        New User? Register <Link to="/register">here</Link>
+      </p>
+  
       <form onSubmit={handleSubmit}>
-        <div className="input-group">
+        <div className="form-group">
           <label htmlFor="email">Email</label>
           <input
+            style={inputStyles}
             type="email"
+            className="form-control"
+            required
             id="email"
             name="email"
-            value={credentials.email}
-            onChange={handleChange}
-            required
+            value={email}
+            placeholder="Enter your email"
+            onChange={(e) => setEmail(e.target.value)}
           />
         </div>
-        <div className="input-group">
+        <div className="form-group">
           <label htmlFor="password">Password</label>
           <input
+            style={inputStyles}
             type="password"
+            className="form-control"
             id="password"
             name="password"
-            value={credentials.password}
-            onChange={handleChange}
+            value={password}
+            placeholder="Enter your password"
+            onChange={(e) => setPassword(e.target.value)}
             required
           />
         </div>
-        <button type="submit">Login</button>
+        <button type="submit" className="btn btn-primary">Login</button>
       </form>
+      {error && <p className="error-message">{error}</p>}
     </div>
   );
 };

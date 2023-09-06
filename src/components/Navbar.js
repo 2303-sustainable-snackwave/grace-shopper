@@ -6,18 +6,18 @@ import { fetchCurrentUser } from '../api';
 const Navbar = ({ token, logout }) => {
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // useEffect(() => {
-  //   // Fetch the current user's information and set the isAdmin state
-  //   if (token) {
-  //     fetchCurrentUser(token)
-  //       .then((currentUser) => {
-  //         setIsAdmin(currentUser.is_admin);
-  //       })
-  //       .catch((error) => {
-  //         console.error("Error fetching current user:", error);
-  //       });
-  //   }
-  // }, [token]);
+  useEffect(() => {
+    // Fetch the current user's information and set the isAdmin state
+    if (token) {
+      fetchCurrentUser(token)
+        .then((currentUser) => {
+          setIsAdmin(currentUser.is_admin);
+        })
+        .catch((error) => {
+          console.error("Error fetching current user:", error);
+        });
+    }
+  }, [token]);
 
   return (
     <nav className="navbar navbar-expand-lg navbar-light custom-navbar-background">

@@ -20,6 +20,20 @@ router.get('/', async (req, res, next) => {
   }
 });
 
+// GET /api/products/search
+router.get('/search', async (req, res, next) => {
+  try {
+      const { query } = req.query;
+      if (!query) {
+          return res.status(400).json({ error: 'Query parameter is required' });
+      }
+      const products = await searchProducts(query);
+      res.json(products);
+  } catch (error) {
+      next(new ProductError('There was an error searching for products.'));
+  }
+});
+
 // GET /api/products/:productId
 router.get('/:productId', async (req, res, next) => {
   try {
@@ -35,20 +49,5 @@ router.get('/:productId', async (req, res, next) => {
     next(new ProductError('There was an error retrieving the product.'));
   }
 });
-
-// GET /api/products/search
-router.get('/search', async (req, res, next) => {
-  try {
-      const { query } = req.query;
-      if (!query) {
-          return res.status(400).json({ error: 'Query parameter is required' });
-      }
-      const products = await searchProducts(query);
-      res.json(products);
-  } catch (error) {
-      next(new ProductError('There was an error searching for products.'));
-  }
-});
-
 
 module.exports = router;

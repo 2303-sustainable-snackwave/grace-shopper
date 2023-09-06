@@ -2,7 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import Search from './Search';
 
-const Navbar = ({ token }) => {
+const Navbar = ({ token, logout }) => {
   return (
     <nav className="navbar navbar-expand-lg navbar-light custom-navbar-background">
       <span className="navbar-text custom-navbar-text">Cycle's-R-Us</span>
@@ -28,6 +28,9 @@ const Navbar = ({ token }) => {
               <li className="nav-item">
                 <Link className="nav-link" to="/profile">Profile</Link>
               </li>
+              <li className="nav-item">
+              <button className="nav-link" onClick={logout}>Logout</button>
+            </li>
             </>
           )}
           <li className="nav-item">

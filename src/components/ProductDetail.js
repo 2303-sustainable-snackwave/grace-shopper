@@ -1,20 +1,20 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { fetchProductById, createCart, fetchUserCart, addProductToCart } from "../api";
 
-const ProductDetail = ({token}) => {
+const ProductDetail = ({ token }) => {
   const [product, setProduct] = useState(null);
   const [error, setError] = useState(null);
-  const [quantity, setQuantity] = useState(1); // Default quantity is 1
+  const [quantity, setQuantity] = useState(1);
+  const [showModal, setShowModal] = useState(false);
 
+  const navigate = useNavigate();
+  const { productId } = useParams();
 
-  const { productId } = useParams(); // Product detail is coming from the URL / make sure route is correct!
-  console.log(productId);
   useEffect(() => {
     async function loadProduct() {
       try {
         const fetchedProduct = await fetchProductById(productId);
-        console.log(fetchedProduct);
         setProduct(fetchedProduct);
       } catch (err) {
         setError("Error loading product details");
@@ -24,59 +24,53 @@ const ProductDetail = ({token}) => {
     loadProduct();
   }, [productId]);
 
+  const handleBackClick = () => {
+    navigate('/products');
+  };
 
-  // Event handler to update quantity
   const handleQuantityChange = (e) => {
-    const newQuantity = parseInt(e.target.value, 10); // Parse input value as an integer
+    const newQuantity = parseInt(e.target.value, 10);
     setQuantity(newQuantity);
   };
 
   const handleAddToCart = async (userId, guestId, productId, token) => {
     try {
       if (userId) {
-        // If a user is logged in, fetch the user's cart
         const userCart = await fetchUserCart(userId, token);
   
         if (!userCart || !userCart.cart) {
-          // Create a new cart for the user
-          const cartId = await createCart( userId, null ); // Assuming guestId is null for a user
-          // Add the product to the user's new cart
+          const cartId = await createCart(userId, null);
           await addProductToCart(userId, productId, token, cartId);
         } else {
-          // Add the product to the user's existing cart
           await addProductToCart(userId, productId, token, userCart.cart.id);
         }
       } else if (guestId) {
-        // If it's a guest, check for a guest cart
         const guestCart = await fetchUserCart(guestId, null);
   
         if (!guestCart || !guestCart.cart) {
-          // Create a new cart for the guest
-          const cartId = await createCart( null, guestId );
-          // Add the product to the guest's new cart
+          const cartId = await createCart(null, guestId);
           await addProductToCart(null, productId, null, cartId);
         } else {
-          // Add the product to the guest's existing cart
           await addProductToCart(null, productId, null, guestCart.cart.id);
         }
       }
   
-      // Optionally, you can show a success message or update the cart icon
       alert("Product added to cart successfully!");
     } catch (err) {
       setError("Error adding product to cart");
     }
   };
       
-  if (!product) return <div>Loading...</div>;
+  if (!product) return <div className="d-flex justify-content-center mt-5"><div className="spinner-border" role="status"><span className="sr-only">Loading...</span></div></div>;
 
   return (
-    <div className="container mt-5">
+    <div style={{ marginBottom: '10px' }} className="container mt-5">
       <div className="card">
         <img
-          src={product.imageUrl}
+          src={product.imageurl}
           alt={product.name}
           className="card-img-top"
+          onClick={() => setShowModal(true)}
           onError={(e) => {
             e.target.onerror = null;
             e.target.src = '/path/to/default/image.jpg';
@@ -86,7 +80,7 @@ const ProductDetail = ({token}) => {
           <h5 className="card-title">{product.name}</h5>
           <p className="card-text">{product.description}</p>
           <ul className="list-group list-group-flush">
-            <li className="list-group-item">Price: ${product.price}</li>
+            <li className="list-group-item">Price: ${product.amount}</li>
             <li className="list-group-item">
               Available: {product.isAvailable ? "Yes" : "No"}
             </li>
@@ -113,6 +107,22 @@ const ProductDetail = ({token}) => {
           {error && <p className="text-danger mt-3">{error}</p>}
         </div>
       </div>
+      <button className="btn btn-primary mt-5" onClick={handleBackClick}>
+        Back to Product Listing
+      </button>
+      <div className={`modal ${showModal ? 'show' : ''}`} tabIndex="-1" style={{ display: showModal ? 'block' : 'none' }}>
+        <div className="modal-dialog modal-lg">
+          <div className="modal-content">
+            <div className="modal-body">
+              <img src={product.imageurl} alt={product.name} className="img-fluid" />
+            </div>
+            <div className="modal-footer">
+              <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      {showModal && <div className="modal-backdrop show"></div>}
     </div>
   );
 };

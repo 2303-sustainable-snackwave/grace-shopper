@@ -919,3 +919,31 @@ export const fetchUserShippingAddresses = async (token) => {
     throw new Error(`Error fetching user's shipping addresses: ${error.message}`);
   }
 };
+
+export const fetchUserOrderHistory = async (userId, token) => {
+  console.log("Token received:", token);
+  try {
+    const response = await fetch(`${BASE_URL}/api/orders/user/${userId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    console.log("Token response:", response);
+
+    const data = await response.json();
+    console.log("Token response:", response);
+
+    if (response.ok) {
+      return data; 
+    } else {
+      throw new Error(data.message);
+    }
+  } catch (error) {
+    throw new Error(`Error fetching user's order history: ${error.message}`);
+  }
+};
+
+
+
+

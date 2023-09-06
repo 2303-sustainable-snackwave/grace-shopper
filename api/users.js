@@ -280,7 +280,7 @@ router.get('/me/billing-addresses', verifyToken, isAuthorizedToUpdate, async (re
 
   try {
     // Extract the user ID from the request (assuming it's stored in req.user or req.userId)
-    const { userId } = req.user;
+    const { userId } = req.user.id;
     
     // Log the token data
     console.log('Token Data:', req.user);

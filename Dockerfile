@@ -4,9 +4,9 @@
 ARG NODE_VERSION=20.3.1
 FROM node:${NODE_VERSION}-slim as base
 
-LABEL fly_launch_runtime="Node.js/Prisma"
+LABEL fly_launch_runtime="Node.js"
 
-# Node.js/Prisma app lives here
+# Node.js app lives here
 WORKDIR /app
 
 # Set production environment
@@ -23,10 +23,6 @@ RUN apt-get update -qq && \
 # Install node modules
 COPY --link package-lock.json package.json ./
 RUN npm ci --include=dev
-
-# Generate Prisma Client
-COPY --link prisma .
-RUN npx prisma generate
 
 # Copy application code
 COPY --link . .

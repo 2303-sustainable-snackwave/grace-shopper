@@ -12,6 +12,7 @@ WORKDIR /app
 # Set production environment
 ENV NODE_ENV="production"
 
+
 # Throw-away build stage to reduce size of final image
 FROM base as build
 
@@ -20,21 +21,22 @@ RUN apt-get update -qq && \
     apt-get install -y build-essential openssl pkg-config python-is-python3
 
 # Install node modules
-COPY package-lock.json package.json ./
-RUN npm ci --only=production
+COPY --link package-lock.json package.json ./
+RUN npm ci --include=dev
 
 # Generate Prisma Client
-COPY prisma ./prisma
+COPY --link prisma .
 RUN npx prisma generate
 
 # Copy application code
-COPY . .
+COPY --link . .
 
 # Build application
 RUN npm run build
 
 # Remove development dependencies
-RUN npm prune --production
+RUN npm prune --omit=dev
+
 
 # Final stage for app image
 FROM base
@@ -44,7 +46,7 @@ RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y openssl && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
-# Copy built application from the build stage
+# Copy built application
 COPY --from=build /app /app
 
 # Start the server by default, this can be overwritten at runtime
